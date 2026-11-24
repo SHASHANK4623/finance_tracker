@@ -114,6 +114,14 @@ elif os.environ.get('MYSQLHOST'):
             }
         }
     }
+elif is_railway_or_prod:
+    # On Railway / Production, if MySQL is not linked yet, fall back to SQLite to prevent startup crash
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 else:
     # Default local development MySQL configuration
     DATABASES = {
