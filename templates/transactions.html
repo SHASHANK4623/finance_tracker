@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load currency_tags %}
+
+{% block title %}MONARCH — Transactions Ledger{% endblock %}
+
+{% block content %}
+<div class="card pad">
+  <div class="secthead">
+    <div>
+      <h2 class="secttitle">Transactions Ledger</h2>
+      <div class="sectsub">Browse, search, and manage all your historical wealth activities.</div>
+    </div>
+    <button class="btn" onclick="openModal()">＋ Record New Transaction</button>
+  </div>
+
+  <!-- Filter & Search Controls -->
+  <form method="get" action="{% url 'transactions' %}" style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;">
+    <div style="flex:1; min-width:200px;">
+      <input type="text" name="q" value="{{ query }}" placeholder="Search description, payment method, notes..." 
+             style="width:100%; padding:10px 14px; background:#20221b; color:var(--text); border:1px solid var(--line); border-radius:6px; font-size:12px;">
+    </div>
+    <div style="width:180px;">
+      <select name="category" onchange="this.form.submit()" 
+              style="width:100%; padding:10px 14px; background:#20221b; color:var(--text); border:1px solid var(--line); border-radius:6px; font-size:12px;">
+        <option value="">All Categories</option>
+        {% for cat_val, cat_label in categories %}
+          <option value="{{ cat_val }}" {% if category_filter == cat_val %}selected{% endif %}>{{ cat_label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="width:140px;">
+      <select name="type" onchange="this.form.submit()" 
+              style="width:100%; padding:10px 14px; background:#20221b; color:var(--text); border:1px solid var(--line); border-radius:6px; font-size:12px;">
+        <option value="">All Types</option>
+        <option value="INCOME" {% if type_filter == 'INCOME' %}selected{% endif %}>Income (+)</option>
+        <option value="EXPENSE" {% if type_filter == 'EXPENSE' %}selected{% endif %}>Expense (−)</option>
+      </select>
+    </div>
+    <button type="submit" class="btn">Filter</button>
+    {% if query or category_filter or type_filter %}
+      <a href="{% url 'transactions' %}" class="btn ghost">Clear</a>
+    {% endif %}
+  </form>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Category</th>
+          <th>Target Asset</th>
+          <th>Date</th>
+          <th>Payment</th>
+          <th>Amount</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in transactions %}
+        <tr>
+          <td>
+            <div class="category">
+              <span class="dot"></span>
+              <b>{{ t.title }}</b>
+            </div>
+            {% if t.notes %}<small class="muted" style="display:block; margin-left:15px;">{{ t.notes }}</small>{% endif %}
+          </td>
+          <td>{{ t.get_category_display }}</td>
+          <td>{{ t.asset.name|default:"General" }}</td>
+          <td>{{ t.date|date:"d M Y" }}</td>
+          <td><span class="muted">{{ t.payment_method }}</span></td>
+          <td class="{% if t.transaction_type == 'INCOME' %}positive{% else %}negative{% endif %}" style="font-weight:600;">
+            {% if t.transaction_type == 'INCOME' %}+{% else %}−{% endif %} ₹ {{ t.amount|inr }}
+          </td>
+          <td style="text-align:right; white-space:nowrap;">
+            <a href="{% url 'edit_transaction' t.id %}?next=transactions" 
+               class="btn ghost" 
+               style="padding:5px 9px; font-size:11px; margin-right:4px;">
+              ✎ Edit
+            </a>
+            <a href="{% url 'delete_transaction' t.id %}?next=transactions" 
+               class="btn danger" 
+               style="padding:5px 9px; font-size:11px;" 
+               onclick="return confirm('Permanently delete this transaction?');">
+              Delete
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="muted" style="text-align:center; padding:30px;">
+            No records matched your search criteria.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if transactions.has_other_pages %}
+  <div class="pagination">
+    <span>Showing page {{ transactions.number }} of {{ transactions.paginator.num_pages }} ({{ transactions.paginator.count }} total records)</span>
+    <div class="pagelinks">
+      {% if transactions.has_previous %}
+        <a href="?page={{ transactions.previous_page_number }}&q={{ query }}&category={{ category_filter }}&type={{ type_filter }}">« Previous</a>
+      {% endif %}
+      
+      {% for num in transactions.paginator.page_range %}
+        {% if transactions.number == num %}
+          <span class="current">{{ num }}</span>
+        {% elif num > transactions.number|add:'-3' and num < transactions.number|add:'3' %}
+          <a href="?page={{ num }}&q={{ query }}&category={{ category_filter }}&type={{ type_filter }}">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if transactions.has_next %}
+        <a href="?page={{ transactions.next_page_number }}&q={{ query }}&category={{ category_filter }}&type={{ type_filter }}">Next »</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

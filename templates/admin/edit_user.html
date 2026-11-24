@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Member: {{ target_user.username }} — MONARCH Admin{% endblock %}
+
+{% block content %}
+<div class="section" style="max-width: 720px; margin: 0 auto;">
+  <!-- Header -->
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--line);">
+    <div>
+      <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(213, 183, 123, 0.12); border: 1px solid rgba(213, 183, 123, 0.3); border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 700; color: var(--gold); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px;">
+        <span>🛡️</span> ACCOUNT CONFIGURATION
+      </div>
+      <h1 style="margin: 0; font-family: 'Playfair Display', serif; font-size: 28px; color: var(--text);">
+        Edit Member Profile & Access
+      </h1>
+      <p class="muted" style="margin: 6px 0 0; font-size: 13px;">
+        Modifying account privileges, professional credentials, and compensation for <b>@{{ target_user.username }}</b>.
+      </p>
+    </div>
+    <a href="{% url 'manage_users' %}" class="btn ghost" style="padding: 8px 14px; font-size: 11px;">
+      ← Return to Directory
+    </a>
+  </div>
+
+  <div class="panel" style="padding: 36px 32px; background: #161813; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 15px 50px rgba(0,0,0,0.6);">
+    <!-- User Quick Header Card -->
+    <div style="display: flex; align-items: center; gap: 16px; padding: 16px 20px; background: #20221c; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 24px;">
+      <div style="width: 52px; height: 52px; border-radius: 50%; background: #2b2e23; border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: var(--gold); overflow: hidden; flex-shrink: 0;">
+        {% if target_user.profile.avatar %}
+          <img src="{{ target_user.profile.avatar.url }}" style="width: 100%; height: 100%; object-fit: cover;" alt="{{ target_user.username }}">
+        {% else %}
+          {{ target_user.username|slice:":1"|upper }}
+        {% endif %}
+      </div>
+      <div style="flex: 1;">
+        <div style="font-size: 16px; font-weight: 700; color: var(--text);">
+          {{ target_user.first_name|default:target_user.username }} {{ target_user.last_name }}
+        </div>
+        <div class="muted" style="font-size: 12px; margin-top: 2px;">
+          Member ID #{{ target_user.id }} · Onboarded {{ target_user.date_joined|date:"d M Y" }}
+        </div>
+      </div>
+      <div style="text-align: right;">
+        <span style="font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 4px; {% if target_user.is_superuser %}background: rgba(213,183,123,0.25); color: var(--gold); border: 1px solid var(--gold);{% elif target_user.is_staff %}background: rgba(213,183,123,0.15); color: var(--gold);{% else %}background: #23251e; color: var(--muted);{% endif %}">
+          {% if target_user.is_superuser %}SUPER ADMIN{% elif target_user.is_staff %}ADMIN STAFF{% else %}WEALTH MEMBER{% endif %}
+        </span>
+      </div>
+    </div>
+
+    {% if form.errors %}
+      <div style="padding: 12px 16px; border-radius: 6px; font-size: 13px; margin-bottom: 20px; border: 1px solid var(--red); background: #201715; color: var(--red);">
+        {% for field, errors in form.errors.items %}
+          <div><b>{{ field|capfirst }}:</b> {{ errors.0 }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div style="font-size: 10px; font-weight: 800; letter-spacing: 1.5px; color: var(--gold); text-transform: uppercase; margin-bottom: 10px;">
+        1. Member Identity
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="field" style="margin: 8px 0;">
+          <label>First Name</label>
+          {{ form.first_name }}
+        </div>
+        <div class="field" style="margin: 8px 0;">
+          <label>Last Name</label>
+          {{ form.last_name }}
+        </div>
+      </div>
+
+      <div class="field" style="margin: 8px 0;">
+        <label>Username</label>
+        {{ form.username }}
+      </div>
+
+      <div class="field" style="margin: 8px 0;">
+        <label>Email Address</label>
+        {{ form.email }}
+      </div>
+
+      <div style="font-size: 10px; font-weight: 800; letter-spacing: 1.5px; color: var(--gold); text-transform: uppercase; margin: 20px 0 10px;">
+        2. Role & Annual Compensation
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 16px;">
+        <div class="field" style="margin: 8px 0;">
+          <label>Job Role / Occupation</label>
+          {{ form.job_role }}
+        </div>
+        <div class="field" style="margin: 8px 0;">
+          <label>Annual Salary / CTC (INR)</label>
+          {{ form.annual_salary }}
+        </div>
+      </div>
+
+      <div style="font-size: 10px; font-weight: 800; letter-spacing: 1.5px; color: var(--gold); text-transform: uppercase; margin: 20px 0 10px;">
+        3. Authority & Access Status
+      </div>
+
+      <div style="display: flex; gap: 24px; margin: 12px 0 24px; padding: 14px 18px; background: #20221c; border-radius: 8px; border: 1px solid var(--line);">
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); cursor: pointer;">
+          {{ form.is_active }} Active Account (Permit Sign-In)
+        </label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gold); cursor: pointer;">
+          {{ form.is_staff }} Grant Administrator Status
+        </label>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--line);">
+        <button type="submit" class="btn" style="padding: 12px 26px;">Save Changes</button>
+        <a href="{% url 'admin_reset_user_password' target_user.id %}" class="btn ghost" style="padding: 12px 20px;">
+          🔑 Reset Password
+        </a>
+        <a href="{% url 'manage_users' %}" class="btn ghost" style="padding: 12px 20px; margin-left: auto;">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

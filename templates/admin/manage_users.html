@@ -1,0 +1,420 @@
+{% extends "base.html" %}
+{% load currency_tags %}
+
+{% block title %}Executive User Management — MONARCH Admin Console{% endblock %}
+
+{% block content %}
+<div class="section">
+  <!-- Executive Control Header -->
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--line);">
+    <div>
+      <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(213, 183, 123, 0.1); border: 1px solid rgba(213, 183, 123, 0.3); border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 700; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px;">
+        <span>🛡️</span> MONARCH EXECUTIVE CONTROL CONSOLE
+      </div>
+      <h1 style="margin: 0; font-family: 'Playfair Display', serif; font-size: 32px; color: var(--text); letter-spacing: 0.5px;">
+        Member Accounts & <span style="color: var(--gold);">Authority Control</span>
+      </h1>
+      <p class="muted" style="margin: 8px 0 0; font-size: 14px; max-width: 650px; line-height: 1.5;">
+        Enterprise private wealth member administration, credential provisioning, role assignments, and client portfolio inspection.
+      </p>
+    </div>
+
+    <!-- Quick Action Header Buttons -->
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <button class="btn" type="button" onclick="openCreateUserModal()" style="display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; box-shadow: 0 4px 20px rgba(213, 183, 123, 0.25);">
+        <span style="font-size: 16px; font-weight: 900;">＋</span> Onboard New Member
+      </button>
+      <a href="/admin/" target="_blank" class="btn ghost" style="display: inline-flex; align-items: center; gap: 6px; padding: 11px 16px;">
+        <span>⚙</span> Django Admin Portal
+      </a>
+      <a href="{% url 'dashboard' %}" class="btn ghost" style="display: inline-flex; align-items: center; gap: 6px; padding: 11px 16px;">
+        <span>◈</span> Wealth Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Executive KPI Metrics Deck -->
+  <div class="cards" style="grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px;">
+    <!-- Total Members -->
+    <div class="card" style="background: linear-gradient(145deg, #181a14 0%, #12140f 100%); border: 1px solid rgba(213, 183, 123, 0.2); padding: 22px;">
+      <div class="cardtop">
+        <span class="muted" style="font-size: 11px; font-weight: 700; letter-spacing: 1px;">TOTAL REGISTERED</span>
+        <span class="badge" style="background: rgba(213, 183, 123, 0.1); border-color: rgba(213, 183, 123, 0.3); color: var(--gold);">DIRECTORY</span>
+      </div>
+      <div class="kpi" style="font-size: 32px; font-weight: 700; color: var(--text); margin: 8px 0 4px;">{{ total_users }}</div>
+      <div class="sub" style="font-size: 12px; color: var(--muted);">Active client profiles in database</div>
+    </div>
+
+    <!-- Active Accounts -->
+    <div class="card" style="background: linear-gradient(145deg, #181a14 0%, #12140f 100%); border: 1px solid rgba(165, 198, 154, 0.25); padding: 22px;">
+      <div class="cardtop">
+        <span class="muted" style="font-size: 11px; font-weight: 700; letter-spacing: 1px;">ACTIVE SESSIONS</span>
+        <span class="badge" style="background: rgba(165, 198, 154, 0.15); border-color: rgba(165, 198, 154, 0.4); color: var(--green);">● LIVE</span>
+      </div>
+      <div class="kpi" style="font-size: 32px; font-weight: 700; color: var(--green); margin: 8px 0 4px;">{{ active_users }}</div>
+      <div class="sub" style="font-size: 12px; color: var(--muted);">Permitted portal access</div>
+    </div>
+
+    <!-- Administrators -->
+    <div class="card" style="background: linear-gradient(145deg, #181a14 0%, #12140f 100%); border: 1px solid rgba(213, 183, 123, 0.35); padding: 22px;">
+      <div class="cardtop">
+        <span class="muted" style="font-size: 11px; font-weight: 700; letter-spacing: 1px;">ADMINISTRATIVE STAFF</span>
+        <span class="badge" style="background: rgba(213, 183, 123, 0.2); border-color: var(--gold); color: var(--gold);">AUTHORITY</span>
+      </div>
+      <div class="kpi" style="font-size: 32px; font-weight: 700; color: var(--gold); margin: 8px 0 4px;">{{ admin_count }}</div>
+      <div class="sub" style="font-size: 12px; color: var(--muted);">Superusers & Staff managers</div>
+    </div>
+
+    <!-- Total Platform AUM -->
+    <div class="card" style="background: linear-gradient(145deg, #181a14 0%, #12140f 100%); border: 1px solid rgba(213, 183, 123, 0.25); padding: 22px;">
+      <div class="cardtop">
+        <span class="muted" style="font-size: 11px; font-weight: 700; letter-spacing: 1px;">SYSTEM AUM VALUATION</span>
+        <span class="badge" style="background: rgba(213, 183, 123, 0.1); border-color: rgba(213, 183, 123, 0.3); color: var(--gold);">ASSETS</span>
+      </div>
+      <div class="kpi" style="font-size: 26px; font-weight: 700; color: var(--gold); margin: 8px 0 4px;">{{ total_aum|inr }}</div>
+      <div class="sub" style="font-size: 12px; color: var(--muted);">Combined client wealth tracked</div>
+    </div>
+  </div>
+
+  <!-- Smart Search & Filter Control Bar -->
+  <div class="panel" style="margin-bottom: 24px; padding: 18px 24px; background: #161813; border: 1px solid var(--line); border-radius: 12px;">
+    <form method="get" style="display: flex; gap: 14px; flex-wrap: wrap; align-items: center;">
+      <!-- Search Input -->
+      <div style="flex: 1; min-width: 260px; position: relative;">
+        <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--gold); font-size: 14px;">🔍</span>
+        <input type="text" name="q" value="{{ query }}" placeholder="Search by username, full name, email address, or job role..." 
+               class="form-input" style="height: 44px; padding-left: 38px; background: #20221c; border-color: var(--line);">
+      </div>
+
+      <!-- Status Filter -->
+      <div style="width: 170px;">
+        <select name="status" class="form-select" style="height: 44px; background: #20221c; border-color: var(--line);">
+          <option value="">All Account Statuses</option>
+          <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active Accounts</option>
+          <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Suspended Accounts</option>
+        </select>
+      </div>
+
+      <!-- Role Filter -->
+      <div style="width: 170px;">
+        <select name="role" class="form-select" style="height: 44px; background: #20221c; border-color: var(--line);">
+          <option value="">All Account Roles</option>
+          <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Administrators Only</option>
+          <option value="member" {% if role_filter == 'member' %}selected{% endif %}>Private Clients Only</option>
+        </select>
+      </div>
+
+      <!-- Submit & Reset -->
+      <button type="submit" class="btn" style="height: 44px; padding: 0 22px; font-size: 12px; letter-spacing: 0.5px;">
+        Apply Filter
+      </button>
+
+      {% if query or status_filter or role_filter %}
+        <a href="{% url 'manage_users' %}" class="btn ghost" style="height: 44px; display: inline-flex; align-items: center; padding: 0 16px;">
+          Clear Filters
+        </a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Luxury Member Directory Table -->
+  <div class="panel" style="padding: 0; overflow: hidden; background: #161813; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+    <div style="padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.25);">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 16px; color: var(--gold);">👥</span>
+        <span style="font-weight: 700; font-size: 14px; letter-spacing: 1.5px; color: var(--gold); text-transform: uppercase;">
+          MEMBER DIRECTORY
+        </span>
+        <span style="background: rgba(213, 183, 123, 0.15); border: 1px solid rgba(213, 183, 123, 0.3); color: var(--gold); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 700;">
+          {{ users.paginator.count }} Accounts
+        </span>
+      </div>
+      <div class="muted" style="font-size: 12px;">
+        Displaying Page <b>{{ users.number }}</b> of <b>{{ users.paginator.num_pages }}</b>
+      </div>
+    </div>
+
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--line); color: var(--muted); text-transform: uppercase; font-size: 11px; letter-spacing: 1px; background: rgba(0,0,0,0.35);">
+            <th style="padding: 16px 24px;">Member Identity</th>
+            <th style="padding: 16px 16px;">Occupation & Email</th>
+            <th style="padding: 16px 16px;">Annual Compensation</th>
+            <th style="padding: 16px 16px;">Authority & Status</th>
+            <th style="padding: 16px 16px;">Date Onboarded</th>
+            <th style="padding: 16px 24px; text-align: right;">Administrative Control</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr style="border-bottom: 1px solid rgba(48, 50, 41, 0.6); transition: all 0.2s ease;" onmouseover="this.style.background='rgba(32, 34, 27, 0.5)'" onmouseout="this.style.background='transparent'">
+            <!-- Identity -->
+            <td style="padding: 18px 24px;">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: #23251e; border: 2px solid {% if u.is_superuser %}var(--gold){% elif u.is_staff %}rgba(213,183,123,0.5){% else %}var(--line){% endif %}; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--gold); font-size: 16px; overflow: hidden; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.4);">
+                  {% if u.profile.avatar %}
+                    <img src="{{ u.profile.avatar.url }}" style="width: 100%; height: 100%; object-fit: cover;" alt="{{ u.username }}">
+                  {% else %}
+                    {{ u.username|slice:":1"|upper }}
+                  {% endif %}
+                </div>
+                <div>
+                  <div style="font-weight: 700; font-size: 14px; color: var(--text);">
+                    <a href="{% url 'admin_user_detail' u.id %}" style="color: inherit; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text)'">
+                      {{ u.first_name }} {{ u.last_name }}
+                      {% if not u.first_name and not u.last_name %}
+                        {{ u.username }}
+                      {% endif %}
+                    </a>
+                    {% if u.pk == request.user.pk %}
+                      <span style="font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 4px; background: rgba(213, 183, 123, 0.25); color: var(--gold); border: 1px solid var(--gold); margin-left: 6px; letter-spacing: 0.5px;">YOU</span>
+                    {% endif %}
+                  </div>
+                  <div class="muted" style="font-size: 11px; margin-top: 2px;">
+                    @{{ u.username }} · <span style="opacity: 0.7;">ID #{{ u.id }}</span>
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            <!-- Occupation & Email -->
+            <td style="padding: 18px 16px;">
+              <div style="font-weight: 600; color: var(--text); font-size: 13px;">
+                {{ u.profile.occupation|default:"Private Wealth Member" }}
+              </div>
+              <div class="muted" style="font-size: 11px; margin-top: 3px;">
+                {{ u.email|default:"No email registered" }}
+              </div>
+            </td>
+
+            <!-- Annual CTC & Assets -->
+            <td style="padding: 18px 16px;">
+              <div style="font-weight: 700; color: var(--gold); font-size: 14px;">
+                {% if u.profile.annual_ctc %}
+                  {{ u.profile.annual_ctc|inr }}
+                {% else %}
+                  <span class="muted">₹0.00</span>
+                {% endif %}
+              </div>
+              <div class="muted" style="font-size: 11px; margin-top: 3px;">
+                {{ u.assets.count }} high-value assets tracked
+              </div>
+            </td>
+
+            <!-- Role & Status -->
+            <td style="padding: 18px 16px;">
+              <div style="display: flex; flex-direction: column; gap: 5px; align-items: flex-start;">
+                {% if u.is_superuser %}
+                  <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; padding: 3px 9px; border-radius: 4px; background: linear-gradient(90deg, rgba(213,183,123,0.25), rgba(169,138,80,0.15)); color: var(--gold); border: 1px solid rgba(213,183,123,0.5); letter-spacing: 0.5px;">
+                    🛡️ SUPER ADMIN
+                  </span>
+                {% elif u.is_staff %}
+                  <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 4px; background: rgba(213, 183, 123, 0.15); color: var(--gold); border: 1px solid rgba(213, 183, 123, 0.3);">
+                    ⚙ STAFF ADMIN
+                  </span>
+                {% else %}
+                  <span style="font-size: 10px; padding: 3px 8px; border-radius: 4px; background: #20221c; color: var(--muted); border: 1px solid var(--line);">
+                    ♙ WEALTH CLIENT
+                  </span>
+                {% endif %}
+
+                {% if u.is_active %}
+                  <span style="font-size: 11px; color: var(--green); display: flex; align-items: center; gap: 5px; font-weight: 600;">
+                    <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green);"></span>
+                    Active Access
+                  </span>
+                {% else %}
+                  <span style="font-size: 11px; color: var(--red); display: flex; align-items: center; gap: 5px; font-weight: 600;">
+                    <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--red);"></span>
+                    Suspended
+                  </span>
+                {% endif %}
+              </div>
+            </td>
+
+            <!-- Date Onboarded -->
+            <td style="padding: 18px 16px; color: var(--muted); font-size: 12px;">
+              {{ u.date_joined|date:"d M Y" }}
+            </td>
+
+            <!-- Control Actions -->
+            <td style="padding: 18px 24px; text-align: right;">
+              <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: flex-end;">
+                <!-- Inspect Portfolio -->
+                <a href="{% url 'admin_user_detail' u.id %}" class="btn ghost" style="padding: 7px 11px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" title="Inspect User Portfolio & Holdings">
+                  <span>👁</span> Inspect
+                </a>
+
+                <!-- Edit Profile -->
+                <a href="{% url 'admin_edit_user' u.id %}" class="btn ghost" style="padding: 7px 11px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" title="Edit Profile, Roles & Compensation">
+                  <span>✎</span> Edit
+                </a>
+
+                <!-- Reset Password -->
+                <a href="{% url 'admin_reset_user_password' u.id %}" class="btn ghost" style="padding: 7px 11px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" title="Reset Password Key">
+                  <span>🔑</span> Key
+                </a>
+
+                <!-- Suspend / Activate Toggle -->
+                {% if u.pk != request.user.pk %}
+                <form method="post" action="{% url 'admin_toggle_user_status' u.id %}" style="display: inline;" onsubmit="return confirm('Confirm: Change account access status for {{ u.username }}?');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn ghost" style="padding: 7px 11px; font-size: 11px; {% if u.is_active %}color: var(--red); border-color: rgba(217,148,130,0.35);{% else %}color: var(--green); border-color: rgba(165,198,154,0.35);{% endif %}" title="{% if u.is_active %}Suspend account access{% else %}Restore account access{% endif %}">
+                    {% if u.is_active %}Suspend{% else %}Activate{% endif %}
+                  </button>
+                </form>
+
+                <!-- Delete Member -->
+                <form method="post" action="{% url 'admin_delete_user' u.id %}" style="display: inline;" onsubmit="return confirm('CRITICAL WARNING: This action is permanent! Delete user \'{{ u.username }}\' and wipe all associated luxury assets, liabilities, and transactions?');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn danger" style="padding: 7px 11px; font-size: 11px;" title="Permanently Delete Member">
+                    ✕
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" style="padding: 50px 20px; text-align: center; color: var(--muted);">
+              <div style="font-size: 28px; margin-bottom: 8px;">🔍</div>
+              <div style="font-size: 15px; font-weight: 600; color: var(--text);">No Member Accounts Found</div>
+              <div style="font-size: 12px; margin-top: 4px;">No registered accounts match your current filter criteria.</div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination Footer -->
+    {% if users.has_other_pages %}
+    <div style="padding: 18px 24px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);">
+      <div class="muted" style="font-size: 12px;">
+        Showing {{ users.start_index }}–{{ users.end_index }} of {{ users.paginator.count }} verified accounts
+      </div>
+      <div style="display: flex; gap: 8px;">
+        {% if users.has_previous %}
+          <a href="?page={{ users.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}" class="btn ghost" style="padding: 7px 14px; font-size: 11px;">
+            ← Previous Page
+          </a>
+        {% endif %}
+
+        {% if users.has_next %}
+          <a href="?page={{ users.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}" class="btn ghost" style="padding: 7px 14px; font-size: 11px;">
+            Next Page →
+          </a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Modal: Onboard New Member -->
+<div class="modal" id="createUserModal" style="display: none;">
+  <div class="modalbox" style="max-width: 580px; background: #171914; border: 1px solid rgba(213, 183, 123, 0.4); box-shadow: 0 30px 80px rgba(0,0,0,0.9); border-radius: 14px; padding: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid var(--line);">
+      <div>
+        <div class="eyebrow" style="color: var(--gold);">Account Provisioning</div>
+        <h2 style="margin: 4px 0 0; font-family: 'Playfair Display', serif; font-size: 22px; color: var(--text);">
+          Onboard New Wealth Member
+        </h2>
+      </div>
+      <button type="button" onclick="closeCreateUserModal()" style="background: none; border: none; color: var(--muted); font-size: 24px; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--muted)'">✕</button>
+    </div>
+
+    <form method="post" action="{% url 'admin_create_user' %}">
+      {% csrf_token %}
+      
+      <div style="font-size: 10px; font-weight: 800; letter-spacing: 1.5px; color: var(--gold); text-transform: uppercase; margin-bottom: 8px;">
+        1. Personal Identity & Credentials
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div class="field" style="margin: 8px 0;">
+          <label>First Name</label>
+          {{ create_form.first_name }}
+        </div>
+        <div class="field" style="margin: 8px 0;">
+          <label>Last Name</label>
+          {{ create_form.last_name }}
+        </div>
+      </div>
+
+      <div class="field" style="margin: 8px 0;">
+        <label>Username</label>
+        {{ create_form.username }}
+      </div>
+
+      <div class="field" style="margin: 8px 0;">
+        <label>Email Address</label>
+        {{ create_form.email }}
+      </div>
+
+      <div style="font-size: 10px; font-weight: 800; letter-spacing: 1.5px; color: var(--gold); text-transform: uppercase; margin: 18px 0 8px;">
+        2. Role & Financial Compensation
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 14px;">
+        <div class="field" style="margin: 8px 0;">
+          <label>Job Role / Occupation</label>
+          {{ create_form.job_role }}
+        </div>
+        <div class="field" style="margin: 8px 0;">
+          <label>Annual Salary / CTC (INR)</label>
+          {{ create_form.annual_salary }}
+        </div>
+      </div>
+
+      <div class="field" style="margin: 8px 0;">
+        <label>Temporary Password</label>
+        {{ create_form.password }}
+      </div>
+
+      <div style="font-size: 10px; font-weight: 800; letter-spacing: 1.5px; color: var(--gold); text-transform: uppercase; margin: 18px 0 8px;">
+        3. Authority & Access Status
+      </div>
+
+      <div style="display: flex; gap: 24px; margin: 10px 0; padding: 14px; background: #20221c; border-radius: 8px; border: 1px solid var(--line);">
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text); cursor: pointer;">
+          {{ create_form.is_active }} Account Active (Permit Sign-In)
+        </label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--gold); cursor: pointer;">
+          {{ create_form.is_staff }} Grant Administrator Privileges
+        </label>
+      </div>
+
+      <div class="modalactions" style="margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--line);">
+        <button class="btn" type="submit" style="padding: 11px 24px;">Initialize Account & Portfolio</button>
+        <button class="btn ghost" type="button" onclick="closeCreateUserModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openCreateUserModal() {
+    const modal = document.getElementById('createUserModal');
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+  }
+
+  function closeCreateUserModal() {
+    const modal = document.getElementById('createUserModal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }
+
+  window.addEventListener('click', function(event) {
+    const modal = document.getElementById('createUserModal');
+    if (event.target === modal) {
+      closeCreateUserModal();
+    }
+  });
+</script>
+{% endblock %}

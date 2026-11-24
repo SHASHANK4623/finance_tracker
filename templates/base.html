@@ -1,0 +1,211 @@
+{% load static %}
+{% load currency_tags %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}MONARCH — Private Wealth{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <div class="shell">
+    <!-- Sidebar Navigation -->
+    <aside class="side">
+      <div class="logo">
+        MONARCH
+        <small>PRIVATE WEALTH</small>
+      </div>
+
+      <nav class="nav">
+        <a href="{% url 'dashboard' %}" class="{% if active_tab == 'overview' %}active{% endif %}">
+          <span class="icon">◈</span> <span class="label">Overview</span>
+        </a>
+        <a href="{% url 'dashboard' %}#collection">
+          <span class="icon">♛</span> <span class="label">My Collection</span>
+        </a>
+        <a href="{% url 'property' %}" class="{% if active_tab == 'property' %}active{% endif %}">
+          <span class="icon">⌂</span> <span class="label">Property</span>
+        </a>
+        <a href="{% url 'transactions' %}" class="{% if active_tab == 'transactions' %}active{% endif %}">
+          <span class="icon">↗</span> <span class="label">Transactions</span>
+        </a>
+        <a href="{% url 'financial_plan' %}" class="{% if active_tab == 'financial_plan' %}active{% endif %}">
+          <span class="icon">📊</span> <span class="label">1-Year Financial Plan</span>
+        </a>
+        <a href="{% url 'profile' %}" class="{% if active_tab == 'profile' %}active{% endif %}">
+          <span class="icon">♙</span> <span class="label">Profile</span>
+        </a>
+        {% if user.is_staff or user.is_superuser %}
+        <div style="margin: 18px 0 6px 12px; font-size: 11px; letter-spacing: 1.5px; color: var(--gold); text-transform: uppercase; font-weight: 700;">Admin Console</div>
+        <a href="{% url 'manage_users' %}" class="{% if active_tab == 'users' %}active{% endif %}" style="border-left: 3px solid var(--gold);">
+          <span class="icon">👥</span> <span class="label">Manage Users</span>
+        </a>
+        <a href="/admin/" target="_blank">
+          <span class="icon">⚙</span> <span class="label">Django Admin</span>
+        </a>
+        {% endif %}
+        {% if user.is_authenticated %}
+        <a href="{% url 'logout' %}" style="margin-top:auto; color:var(--red);">
+          <span class="icon">⏻</span> <span class="label">Sign Out</span>
+        </a>
+        {% endif %}
+      </nav>
+
+      <div class="sidefoot">
+        PRIVATE FINANCIAL OVERVIEW<br>
+        DESIGNED FOR JPMC HIGH NET WORTH<br>
+        © 2026 MONARCH
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main>
+      <!-- Top Bar -->
+      <header class="top">
+        <div>
+          <div class="eyebrow">Private wealth management · {{ profile.occupation|default:"High Net Worth" }}</div>
+          <h1 class="hello">Your world. <span style="color:var(--gold)">Your assets.</span></h1>
+          <div class="muted">
+            Personal expenses and wealth analysis · {{ profile.occupation|default:"Private Wealth" }}{% if profile.annual_ctc %} · {{ profile.annual_ctc|inr_words }}{% endif %}
+          </div>
+        </div>
+
+        {% if user.is_authenticated %}
+        <div style="display: flex; align-items: center; gap: 12px;">
+          {% if user.is_staff or user.is_superuser %}
+          <a href="{% url 'manage_users' %}" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:rgba(213, 183, 123, 0.12); border:1px solid var(--gold); border-radius:6px; padding:6px 12px; font-size:11px; font-weight:700; color:var(--gold); letter-spacing:1px; transition: background 0.2s;" onmouseover="this.style.background='rgba(213, 183, 123, 0.22)'" onmouseout="this.style.background='rgba(213, 183, 123, 0.12)'">
+            🛡️ ADMIN CONSOLE
+          </a>
+          {% endif %}
+          <a href="{% url 'profile' %}" class="userpill">
+            {% if user.profile.avatar %}
+              <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}">
+            {% else %}
+              <span>♙</span>
+            {% endif %}
+            <span>{{ user.first_name|default:user.username|upper }}</span>
+          </a>
+        </div>
+        {% endif %}
+      </header>
+
+      <!-- Django Messages Notification Banner -->
+      {% if messages %}
+        <div style="margin-bottom: 20px;">
+          {% for message in messages %}
+            <div style="padding: 12px 18px; border-radius: 6px; font-size: 13px; margin-bottom: 8px; border: 1px solid {% if message.tags == 'error' %}var(--red){% else %}var(--gold){% endif %}; background: #191b15; color: {% if message.tags == 'error' %}var(--red){% else %}var(--gold){% endif %};">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+
+      <footer class="section muted" style="text-align:center; padding:35px 20px 10px;">
+        MONARCH PRIVATE WEALTH · Personal Expenses Analysis · Django + MySQL Database Engine
+      </footer>
+    </main>
+  </div>
+
+  <!-- Reusable Transaction Modal -->
+  <div class="modal" id="modal">
+    <div class="modalbox">
+      <h2>Record a transaction</h2>
+      <form id="transactionForm" method="post" action="{% url 'add_transaction' %}" data-ajax="true">
+        {% csrf_token %}
+        <div class="field">
+          <label>Description</label>
+          <input type="text" name="title" id="desc" required placeholder="e.g. Full tank petrol, JPMC Salary, Michelin tyres">
+        </div>
+
+        <div class="field">
+          <label>Type</label>
+          <select name="transaction_type" id="type">
+            <option value="EXPENSE">Expense (−)</option>
+            <option value="INCOME">Income (+)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Category</label>
+          <select name="category" id="cat">
+            <optgroup label="Income Streams">
+              <option value="SALARY">Monthly Salary (JPMC)</option>
+              <option value="ESOP">ESOPs & Company Stocks</option>
+              <option value="FREELANCE">Freelancing</option>
+              <option value="GIFTS">Gifts & Bonuses</option>
+              <option value="OTHER_INCOME">Other Income</option>
+            </optgroup>
+            <optgroup label="Expense Buckets">
+              <option value="VEHICLE_FUEL" selected>Fuel & Petrol</option>
+              <option value="VEHICLE_MAINT">Vehicle Servicing & Repairs</option>
+              <option value="VEHICLE_CONSUMABLES">Tyres & Consumables</option>
+              <option value="VEHICLE_INSURANCE">Vehicle Insurance & Tax</option>
+              <option value="VILLA_MAINT">Villa Maintenance & Utilities</option>
+              <option value="FOOD">Food Expenses & Groceries</option>
+              <option value="HOUSEHOLD">Household Expenses</option>
+              <option value="TRAVEL">Traveling Expenses</option>
+              <option value="HEALTH">Health Expenses</option>
+              <option value="LIFESTYLE">Lifestyle & Entertainment</option>
+              <option value="OTHER_EXPENSE">Other Expenses</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Target Asset (Optional)</label>
+          <select name="asset" id="asset">
+            <option value="">General (No Asset Tag)</option>
+            {% for a in assets %}
+              <option value="{{ a.id }}">{{ a.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Amount (₹)</label>
+          <input type="number" name="amount" id="amount" min="0.01" step="0.01" required placeholder="4200.00">
+        </div>
+
+        <div class="field">
+          <label>Financial Month / Calculation Period</label>
+          <select name="financial_month" id="financial_month">
+            <option value="1" {% if selected_month_num == 1 %}selected{% endif %}>Month 1 · April 2026</option>
+            <option value="2" {% if selected_month_num == 2 %}selected{% endif %}>Month 2 · May 2026</option>
+            <option value="3" {% if selected_month_num == 3 %}selected{% endif %}>Month 3 · June 2026</option>
+            <option value="4" {% if selected_month_num == 4 %}selected{% endif %}>Month 4 · July 2026</option>
+            <option value="5" {% if selected_month_num == 5 %}selected{% endif %}>Month 5 · August 2026</option>
+            <option value="6" {% if selected_month_num == 6 %}selected{% endif %}>Month 6 · September 2026</option>
+            <option value="7" {% if selected_month_num == 7 %}selected{% endif %}>Month 7 · October 2026</option>
+            <option value="8" {% if selected_month_num == 8 or not selected_month_num %}selected{% endif %}>Month 8 · November 2026</option>
+            <option value="9" {% if selected_month_num == 9 %}selected{% endif %}>Month 9 · December 2026</option>
+            <option value="10" {% if selected_month_num == 10 %}selected{% endif %}>Month 10 · January 2027</option>
+            <option value="11" {% if selected_month_num == 11 %}selected{% endif %}>Month 11 · February 2027</option>
+            <option value="12" {% if selected_month_num == 12 %}selected{% endif %}>Month 12 · March 2027</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Date (Optional receipt timestamp)</label>
+          <input type="date" name="date" id="date" value="{% now 'Y-m-d' %}" required>
+        </div>
+
+        <div class="modalactions">
+          <button class="btn" type="submit">Save Entry</button>
+          <button class="btn ghost" type="button" onclick="closeModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast" id="toast"></div>
+
+  <script src="{% static 'js/chart.min.js' %}"></script>
+  <script src="{% static 'js/main.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

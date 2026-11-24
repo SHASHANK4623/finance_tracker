@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load currency_tags %}
+
+{% block title %}MONARCH — {% if is_new %}Add Residence / Property{% else %}Modify Property Details{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card pad" style="max-width: 780px; margin: 0 auto;">
+  <div class="secthead">
+    <div>
+      <h2 class="secttitle">
+        {% if is_new %}＋ Register New Property / Residence{% else %}✎ Modify Residence Details{% endif %}
+      </h2>
+      <div class="sectsub">
+        {% if is_new %}
+          Add your primary residence or real estate asset to track its live market valuation and portfolio contribution.
+        {% else %}
+          Update market valuation, purchase price, specifications, or architectural photo for {{ asset.name }}.
+        {% endif %}
+      </div>
+    </div>
+    {% if asset %}
+    <a href="{% url 'property' %}" class="btn ghost" style="font-size:11px;">
+      ← View Interactive Showcase
+    </a>
+    {% endif %}
+  </div>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="field">
+      <label>Property Name / Estate Title</label>
+      {{ form.name }}
+      <small class="muted" style="margin-top:4px; display:block;">e.g. Private Luxury Villa Estate, Seaside Penthouse, DLF Magnolias Residence</small>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+      <div class="field">
+        <label>Current Market Valuation (₹)</label>
+        {{ form.current_valuation }}
+        <small class="muted" style="margin-top:4px; display:block;">
+          {% if asset %}Current Value: <b style="color:var(--gold);">₹ {{ asset.current_valuation|inr }}</b> ({{ asset.current_valuation|inr_words }}){% else %}Suggested Estate Valuation: <b style="color:var(--gold);">₹ 1,00,00,000</b> (1.00 Cr){% endif %}
+        </small>
+      </div>
+      <div class="field">
+        <label>Purchase Price (₹)</label>
+        {{ form.purchase_price }}
+        <small class="muted" style="margin-top:4px; display:block;">
+          {% if asset %}Acquisition Cost: <b style="color:var(--text);">₹ {{ asset.purchase_price|inr }}</b> ({{ asset.purchase_price|inr_words }}){% else %}Suggested Acquisition: <b style="color:var(--text);">₹ 85,00,000</b> (85.00 Lakhs){% endif %}
+        </small>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Specifications & Layout (Square Footage, Bedrooms, Amenities)</label>
+      {{ form.specification }}
+      <small class="muted" style="margin-top:4px; display:block;">e.g. 4,800 sq.ft private estate · 4 Bed Suites · Landscaped Garden · Infinity Pool</small>
+    </div>
+
+    <div class="field">
+      <label>Pinterest Architectural Reference Link (URL)</label>
+      {{ form.pinterest_url }}
+      {% if asset and asset.pinterest_url %}
+        <small style="margin-top:4px; display:block;">
+          <a href="{{ asset.pinterest_url }}" target="_blank" style="color:var(--gold); text-decoration:none;">View current Pin reference ↗</a>
+        </small>
+      {% endif %}
+    </div>
+
+    <div class="field">
+      <label>Property Image (Upload High-Res Photo or Static Path)</label>
+      <div style="margin-bottom:8px;">{{ form.image }}</div>
+      <label style="font-size:11px; margin-top:8px;">Or Static Image File Path:</label>
+      {{ form.image_url }}
+    </div>
+
+    {% if asset and asset.image %}
+      <div style="margin: 16px 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; max-height: 220px;">
+        <img src="{{ asset.image.url }}" alt="{{ asset.name }}" style="width: 100%; height: 220px; object-fit: cover;">
+      </div>
+    {% elif asset and asset.image_url %}
+      <div style="margin: 16px 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; max-height: 220px;">
+        <img src="/static/{{ asset.image_url }}" alt="{{ asset.name }}" style="width: 100%; height: 220px; object-fit: cover;">
+      </div>
+    {% endif %}
+
+    <div style="margin-top:28px; display:flex; gap:12px; align-items:center;">
+      <button type="submit" class="btn">
+        {% if is_new %}Save Property Details{% else %}Update Property{% endif %}
+      </button>
+      <a href="{% url 'property' %}" class="btn ghost">Cancel</a>
+      {% if asset %}
+        <a href="{% url 'delete_asset' asset.id %}" class="btn danger" style="margin-left:auto;" onclick="return confirm('Are you sure you want to remove this property?');">
+          ✕ Remove Property
+        </a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+{% endblock %}

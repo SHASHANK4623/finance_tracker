@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% load currency_tags %}
+
+{% block title %}Executive Portfolio: {{ target_user.username }} — MONARCH Admin{% endblock %}
+
+{% block content %}
+<div class="section">
+  <!-- Header -->
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--line);">
+    <div>
+      <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(213, 183, 123, 0.1); border: 1px solid rgba(213, 183, 123, 0.3); border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 700; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px;">
+        <span>🔍</span> MEMBER PORTFOLIO AUDIT
+      </div>
+      <h1 style="margin: 0; font-family: 'Playfair Display', serif; font-size: 32px; color: var(--text);">
+        {{ target_user.first_name|default:target_user.username }} {{ target_user.last_name }}
+      </h1>
+      <p class="muted" style="margin: 8px 0 0; font-size: 14px;">
+        @{{ target_user.username }} · {{ profile.occupation|default:"Private Wealth Member" }} · {{ target_user.email }}
+      </p>
+    </div>
+
+    <!-- Quick Action Header Buttons -->
+    <div style="display: flex; gap: 10px;">
+      <a href="{% url 'admin_edit_user' target_user.id %}" class="btn">
+        <span>✎</span> Edit Member
+      </a>
+      <a href="{% url 'admin_reset_user_password' target_user.id %}" class="btn ghost">
+        <span>🔑</span> Reset Key
+      </a>
+      <a href="{% url 'manage_users' %}" class="btn ghost">
+        ← Back to Directory
+      </a>
+    </div>
+  </div>
+
+  <!-- Key Metrics KPI Cards -->
+  <div class="cards" style="grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px;">
+    <div class="card" style="background: linear-gradient(145deg, #181a14 0%, #12140f 100%); border: 1px solid rgba(213, 183, 123, 0.35); padding: 22px;">
+      <div class="cardtop">
+        <span class="muted" style="font-size: 11px; font-weight: 700; letter-spacing: 1px;">TOTAL NET WORTH</span>
+        <span class="badge" style="color: var(--gold); border-color: var(--gold);">AUM</span>
+      </div>
+      <div class="kpi" style="color: var(--gold); font-size: 28px; margin: 8px 0 4px;">{{ net_worth|inr }}</div>
+      <div class="sub" style="font-size: 12px; color: var(--muted);">Assets minus active debt</div>
+    </div>
+
+    <div class="card" style="background: linear-gradient(145deg, #181a14 0%, #12140f 100%); border: 1px solid rgba(213, 183, 123, 0.2); padding: 22px;">
+      <div class="cardtop">
+        <span class="muted" style="font-size: 11px; font-weight: 700; letter-spacing: 1px;">TOTAL ASSETS</span>
+        <span class="badge">HOLDINGS</span>
+      </div>
+      <div class="kpi" style="font-size: 28px; margin: 8px 0 4px;">{{ total_assets|inr }}</div>
+      <div class="sub" style="font-size: 12px; color: var(--muted);">{{ assets.count }} assets tracked</div>
+    </div>
+
+    <div class="card" style="background: linear-gradient(145deg, #181a14 0%, #12140f 100%); border: 1px solid rgba(217, 148, 130, 0.25); padding: 22px;">
+      <div class="cardtop">
+        <span class="muted" style="font-size: 11px; font-weight: 700; letter-spacing: 1px;">TOTAL LIABILITIES</span>
+        <span class="badge" style="color: var(--red); border-color: rgba(217,148,130,0.4);">DEBT</span>
+      </div>
+      <div class="kpi" style="color: var(--red); font-size: 28px; margin: 8px 0 4px;">{{ total_liabilities|inr }}</div>
+      <div class="sub" style="font-size: 12px; color: var(--muted);">{{ liabilities.count }} active liabilities</div>
+    </div>
+
+    <div class="card" style="background: linear-gradient(145deg, #181a14 0%, #12140f 100%); border: 1px solid rgba(213, 183, 123, 0.2); padding: 22px;">
+      <div class="cardtop">
+        <span class="muted" style="font-size: 11px; font-weight: 700; letter-spacing: 1px;">ANNUAL SALARY / CTC</span>
+        <span class="badge">INCOME</span>
+      </div>
+      <div class="kpi" style="font-size: 26px; margin: 8px 0 4px;">{{ profile.annual_ctc|inr }}</div>
+      <div class="sub" style="font-size: 12px; color: var(--muted);">Monthly: {{ profile.monthly_salary|inr }}/mo</div>
+    </div>
+  </div>
+
+  <!-- High-Value Registered Assets Grid -->
+  <div class="panel" style="margin-bottom: 28px; padding: 24px; background: #161813; border: 1px solid var(--line); border-radius: 12px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--line);">
+      <h3 style="margin: 0; font-size: 16px; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase;">
+        HIGH-VALUE ASSET PORTFOLIO ({{ assets.count }})
+      </h3>
+    </div>
+
+    {% if assets %}
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+        {% for a in assets %}
+        <div style="background: #20221c; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
+          {% if a.image %}
+            <div style="height: 140px; background-image: url('{{ a.image.url }}'); background-size: cover; background-position: center;"></div>
+          {% elif a.image_url %}
+            <div style="height: 140px; background-image: url('/static/{{ a.image_url }}'); background-size: cover; background-position: center;"></div>
+          {% endif %}
+          <div style="padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div style="font-weight: 700; font-size: 14px; color: var(--text);">{{ a.name }}</div>
+              <span style="font-size: 10px; font-weight: 700; color: var(--gold); background: rgba(213,183,123,0.15); border: 1px solid rgba(213,183,123,0.3); padding: 2px 7px; border-radius: 4px;">{{ a.get_asset_type_display }}</span>
+            </div>
+            <div style="font-size: 20px; font-weight: 700; color: var(--gold); margin: 8px 0 4px;">{{ a.current_valuation|inr }}</div>
+            <div class="muted" style="font-size: 11px;">Purchase Price: {{ a.purchase_price|inr }}</div>
+            {% if a.specification %}
+              <div class="muted" style="font-size: 11px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line);">
+                {{ a.specification }}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted" style="margin: 0; font-size: 13px; text-align: center; padding: 30px;">
+        No high-value assets registered by this member yet.
+      </p>
+    {% endif %}
+  </div>
+
+  <!-- Recent Transactions Ledger -->
+  <div class="panel" style="padding: 24px; background: #161813; border: 1px solid var(--line); border-radius: 12px;">
+    <h3 style="margin: 0 0 16px; font-size: 16px; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase;">
+      TRANSACTIONS AUDIT TRAIL
+    </h3>
+    {% if transactions %}
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--line); color: var(--muted); text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;">
+              <th style="padding: 10px 14px; text-align: left;">Title & Notes</th>
+              <th style="padding: 10px 14px; text-align: left;">Category</th>
+              <th style="padding: 10px 14px; text-align: left;">Monthly Cycle</th>
+              <th style="padding: 10px 14px; text-align: left;">Receipt Date</th>
+              <th style="padding: 10px 14px; text-align: right;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in transactions %}
+            <tr style="border-bottom: 1px solid rgba(48, 50, 41, 0.5);">
+              <td style="padding: 14px; color: var(--text); font-weight: 600;">
+                {{ t.title }}
+                {% if t.notes %}
+                  <small class="muted" style="display: block; font-size: 11px; font-weight: 400;">{{ t.notes }}</small>
+                {% endif %}
+              </td>
+              <td style="padding: 14px; color: var(--muted);">{{ t.get_category_display }}</td>
+              <td style="padding: 14px; color: var(--gold); font-weight: 600;">Month {{ t.financial_month }}</td>
+              <td style="padding: 14px; color: var(--muted);">{{ t.date|date:"d M Y" }}</td>
+              <td style="padding: 14px; text-align: right; font-weight: 700; font-size: 14px; {% if t.transaction_type == 'INCOME' %}color: var(--green);{% else %}color: var(--red);{% endif %}">
+                {% if t.transaction_type == 'INCOME' %}+{% else %}−{% endif %}{{ t.amount|inr }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="muted" style="margin: 0; font-size: 13px; text-align: center; padding: 20px;">
+        No transaction records logged for this member.
+      </p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

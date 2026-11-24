@@ -1,0 +1,45 @@
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Django local & database files
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Environment variables
+.env
+.env.local
+
+# Static collection generated during build
+staticfiles/
+
+# User-uploaded profile pictures (keep directory structure)
+media/profile_pics/*
+!media/profile_pics/.gitkeep
+
+# Temporary generation & test files (video frames & scratch tests in root)
+/bg_inpaint_test.jpg
+/BMW.png
+/bmw_car_isolated.png
+/car_mask_test.png
+/frame_*.jpg
+/test_*.jpg
+/bmw_luxury_loop.mp4
+/login_preview.html
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load currency_tags %}
+
+{% block title %}MONARCH — Edit Transaction{% endblock %}
+
+{% block content %}
+<div class="card pad" style="max-width: 650px; margin: 0 auto;">
+  <div class="secthead">
+    <div>
+      <h2 class="secttitle">Modify Transaction</h2>
+      <div class="sectsub">Update details or amount for record: {{ transaction.title }}.</div>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="field">
+      <label>Description</label>
+      {{ form.title }}
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+      <div class="field">
+        <label>Type</label>
+        {{ form.transaction_type }}
+      </div>
+      <div class="field">
+        <label>Category</label>
+        {{ form.category }}
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1.2fr 0.8fr; gap:16px;">
+      <div class="field">
+        <label>Target Asset (Optional)</label>
+        {{ form.asset }}
+      </div>
+      <div class="field">
+        <label>Amount (₹)</label>
+        {{ form.amount }}
+        <small class="muted" style="margin-top:4px; display:block;">Current: ₹ {{ transaction.amount|inr }}</small>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+      <div class="field">
+        <label>Date</label>
+        {{ form.date }}
+      </div>
+      <div class="field">
+        <label>Financial Month (1-12)</label>
+        {{ form.financial_month }}
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Payment Method</label>
+      {{ form.payment_method }}
+    </div>
+
+    <div class="field">
+      <label>Notes / Workshop / Ref</label>
+      {{ form.notes }}
+    </div>
+
+    <div style="margin-top:24px; display:flex; gap:12px;">
+      <button type="submit" class="btn">Update Transaction</button>
+      <a href="{% url 'transactions' %}" class="btn ghost">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

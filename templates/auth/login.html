@@ -1,0 +1,258 @@
+{% load static %}
+<!doctype html>
+<html lang="en" class="auth-html" style="height:100%; min-height:100vh; margin:0; padding:0;">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign In — MONARCH Private Wealth</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    html, body {
+      height: 100%;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+    body.auth-page {
+      display: grid !important;
+      place-items: center !important;
+      align-content: center !important;
+      justify-content: center !important;
+      min-height: 100vh !important;
+      width: 100vw !important;
+      background: #0d0e0c !important;
+      padding: 24px 16px !important;
+      font-family: 'DM Sans', sans-serif;
+      overflow-x: hidden;
+      overflow-y: auto;
+      position: relative;
+    }
+    .auth-wrapper {
+      width: 100% !important;
+      max-width: 450px !important;
+      margin: auto !important;
+      position: relative;
+      z-index: 10;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    .admin-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(213, 183, 123, 0.12);
+      border: 1px solid rgba(213, 183, 123, 0.35);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 11px;
+      color: var(--gold);
+      letter-spacing: 0.5px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body class="auth-page">
+  <!-- Interactive Luxury Background Stage (Villa Moving Up-Down Slowly + Parallax) -->
+  <div class="interactive-stage" id="interactiveStage" aria-hidden="true">
+    <!-- Hero Background Image (Defaults to Villa moving up-down slowly) -->
+    <div class="hero-visual-bg" id="heroBg" style="background-image: url('{% static 'images/villa_extend.png' %}');"></div>
+    <!-- Hero Background Video (BMW M3 10-second Luxury Loop) -->
+    <video id="heroVideo" class="hero-visual-video" autoplay loop muted playsinline preload="auto" style="display:none;">
+      <source src="{% static 'videos/bmw_luxury_loop.mp4' %}" type="video/mp4">
+    </video>
+    <div class="stage-vignette"></div>
+
+    <!-- 1. Floating Asset: Luxury Villa (Moves Up-Down Slowly) -->
+    <div class="floating-asset float-villa active" id="cardVilla" data-speed="1.4" onclick="selectAsset('villa', '{% static 'images/villa_extend.png' %}')">
+      <div class="float-thumb" style="background-image: url('{% static 'images/villa_extend.png' %}');"></div>
+      <div class="float-info">
+        <div class="float-tag"><span>⌂</span> REAL ESTATE · ₹1.00 CR</div>
+        <div class="float-title">Private Villa Estate</div>
+        <div class="float-desc">4,800 sq ft · Private Grounds</div>
+      </div>
+    </div>
+
+    <!-- 2. Floating Asset: Suzuki Hayabusa -->
+    <div class="floating-asset float-hayabusa" id="cardHayabusa" data-speed="-1.8" onclick="selectAsset('hayabusa', '{% static 'images/hayabusa_modified.jpg' %}')">
+      <div class="float-thumb" style="background-image: url('{% static 'images/hayabusa_modified.jpg' %}');"></div>
+      <div class="float-info">
+        <div class="float-tag"><span>🏍️</span> SUPERBIKE · ₹23.0 L</div>
+        <div class="float-title">Suzuki Hayabusa 1340</div>
+        <div class="float-desc">197 bhp · Custom Akrapovič</div>
+      </div>
+    </div>
+
+    <!-- 3. Floating Asset: BMW S1000RR -->
+    <div class="floating-asset float-s1000rr" id="cardS1000rr" data-speed="1.6" onclick="selectAsset('s1000rr', '{% static 'images/bmw_s1000rr.jpg' %}')">
+      <div class="float-thumb" style="background-image: url('{% static 'images/bmw_s1000rr.jpg' %}');"></div>
+      <div class="float-info">
+        <div class="float-tag"><span>⚡</span> TRACK SUPERBIKE · ₹25.0 L</div>
+        <div class="float-title">BMW S1000RR M-Pack</div>
+        <div class="float-desc">999cc · 205 bhp · Carbon</div>
+      </div>
+    </div>
+
+    <!-- 4. Floating Asset: BMW M3 Competition (10s Luxury Video Loop) -->
+    <div class="floating-asset float-m3" id="cardM3" data-speed="-1.5" onclick="selectAsset('m3', '{% static 'images/bmw_m3.jpg' %}', '{% static 'videos/bmw_luxury_loop.mp4' %}')">
+      <div class="float-thumb" style="background-image: url('{% static 'images/bmw_m3.jpg' %}');"></div>
+      <div class="float-info">
+        <div class="float-tag"><span>🏎️</span> LUXURY MOTION · 10s LOOP</div>
+        <div class="float-title">BMW M3 Competition</div>
+        <div class="float-desc">Desert Highway · 503 bhp</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Centered Glassmorphic Authentication Card -->
+  <div class="auth-wrapper" style="width: 100%; max-width: 450px; margin: 0 auto;">
+    <div class="auth-box auth-glass" style="width: 100%; max-width: 450px; margin: 0 auto;">
+      <div style="text-align:center; margin-bottom: 24px;">
+        <div class="logo" style="font-size: 28px; text-shadow: 0 2px 12px rgba(0,0,0,0.8);">
+          MONARCH
+          <small style="margin-top:6px; letter-spacing: 4px;">PRIVATE WEALTH</small>
+        </div>
+        <p class="muted" style="margin-top: 10px; font-size: 13px; line-height: 1.5;">
+          Sign in to access your personal wealth tracker
+        </p>
+        <div class="admin-badge">
+          <span>🛡️</span>
+          <span>Unified Access · Members & System Admins</span>
+        </div>
+      </div>
+
+      {% if messages %}
+        {% for message in messages %}
+          <div style="padding: 10px 14px; border-radius: 6px; font-size: 12px; margin-bottom: 16px; border: 1px solid {% if message.tags == 'error' %}var(--red){% else %}var(--gold){% endif %}; background: rgba(25, 27, 21, 0.95); color: {% if message.tags == 'error' %}var(--red){% else %}var(--gold){% endif %};">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="field">
+          <label>Username</label>
+          <input type="text" name="username" required autofocus placeholder="Enter your username" 
+                 class="form-input" style="background: rgba(32, 34, 27, 0.9);">
+        </div>
+
+        <div class="field">
+          <label>Password</label>
+          <input type="password" name="password" required placeholder="••••••••••••" 
+                 class="form-input" style="background: rgba(32, 34, 27, 0.9);">
+        </div>
+
+        <div style="margin-top: 24px;">
+          <button type="submit" class="btn" style="width: 100%; display: flex; justify-content: center; align-items: center; padding: 13px; font-size: 12px; letter-spacing: 1.5px; box-shadow: 0 4px 20px rgba(213, 183, 123, 0.3);">
+            AUTHENTICATE
+          </button>
+        </div>
+      </form>
+
+      <div style="text-align:center; margin-top: 22px; font-size: 12px;">
+        <span class="muted">New member?</span> 
+        <a href="{% url 'register' %}" style="color:var(--gold); text-decoration:none; font-weight:600; margin-left:5px;">Create an account</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Luxury Dock Controller -->
+  <div class="interactive-dock" id="interactiveDock">
+    <button type="button" class="dock-btn active" id="btnVilla" onclick="selectAsset('villa', '{% static 'images/villa_extend.png' %}')">
+      <span>⌂</span> Villa Estate (Moving)
+    </button>
+    <button type="button" class="dock-btn" id="btnHayabusa" onclick="selectAsset('hayabusa', '{% static 'images/hayabusa_modified.jpg' %}')">
+      <span>🏍️</span> Suzuki Hayabusa
+    </button>
+    <button type="button" class="dock-btn" id="btnS1000rr" onclick="selectAsset('s1000rr', '{% static 'images/bmw_s1000rr.jpg' %}')">
+      <span>⚡</span> BMW S1000RR
+    </button>
+    <button type="button" class="dock-btn" id="btnM3" onclick="selectAsset('m3', '{% static 'images/bmw_m3.jpg' %}', '{% static 'videos/bmw_luxury_loop.mp4' %}')">
+      <span>🏎️</span> BMW M3 (Video)
+    </button>
+  </div>
+
+  <!-- Mouse Parallax & Dynamic Asset Switching Script -->
+  <script>
+    const assetsData = [
+      { key: 'villa', img: "{% static 'images/villa_extend.png' %}" },
+      { key: 'hayabusa', img: "{% static 'images/hayabusa_modified.jpg' %}" },
+      { key: 's1000rr', img: "{% static 'images/bmw_s1000rr.jpg' %}" },
+      { key: 'm3', img: "{% static 'images/bmw_m3.jpg' %}", video: "{% static 'videos/bmw_luxury_loop.mp4' %}" }
+    ];
+    let currentIndex = 0;
+    let autoPlayTimer = null;
+
+    function selectAsset(key, imgUrl, videoUrl = null) {
+      const hero = document.getElementById('heroBg');
+      const video = document.getElementById('heroVideo');
+
+      if (videoUrl) {
+        if (hero) hero.style.display = 'none';
+        if (video) {
+          video.style.display = 'block';
+          video.src = videoUrl;
+          video.play().catch(e => console.log('Video autoplay:', e));
+        }
+      } else {
+        if (video) {
+          video.style.display = 'none';
+          video.pause();
+        }
+        if (hero) {
+          hero.style.display = 'block';
+          hero.style.opacity = '0.3';
+          setTimeout(() => {
+            hero.style.backgroundImage = `url('${imgUrl}')`;
+            hero.style.opacity = '1';
+          }, 250);
+        }
+      }
+
+      // Update active states
+      document.querySelectorAll('.floating-asset').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.dock-btn').forEach(b => b.classList.remove('active'));
+
+      const activeCard = document.getElementById('card' + key.charAt(0).toUpperCase() + key.slice(1));
+      if (activeCard) activeCard.classList.add('active');
+
+      const activeBtn = document.getElementById('btn' + key.charAt(0).toUpperCase() + key.slice(1));
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    // Interactive 3D Mouse Parallax
+    let mouseX = 0, mouseY = 0;
+    let targetX = 0, targetY = 0;
+
+    window.addEventListener('mousemove', (e) => {
+      targetX = (e.clientX / window.innerWidth - 0.5) * 2;
+      targetY = (e.clientY / window.innerHeight - 0.5) * 2;
+    });
+
+    function renderParallax() {
+      mouseX += (targetX - mouseX) * 0.05;
+      mouseY += (targetY - mouseY) * 0.05;
+
+      const hero = document.getElementById('heroBg');
+      if (hero) {
+        hero.style.transform = `translate(${mouseX * 15}px, ${mouseY * 15}px)`;
+      }
+
+      document.querySelectorAll('.floating-asset').forEach(card => {
+        const speed = parseFloat(card.getAttribute('data-speed') || 1);
+        const offsetX = mouseX * 20 * speed;
+        const offsetY = mouseY * 15 * speed;
+        card.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+      });
+
+      requestAnimationFrame(renderParallax);
+    }
+    renderParallax();
+  </script>
+</body>
+</html>

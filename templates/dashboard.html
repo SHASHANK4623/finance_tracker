@@ -1,0 +1,853 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load currency_tags %}
+
+{% block title %}MONARCH — Dashboard | Private Wealth{% endblock %}
+
+{% block content %}
+{% if user.is_staff or user.is_superuser %}
+<div class="card pad"
+  style="margin-bottom: 20px; padding: 12px 20px; background: linear-gradient(90deg, #1f1d14, #171915); border: 1px solid rgba(213, 183, 123, 0.35); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <span style="font-size: 18px;">🛡️</span>
+    <div>
+      <span style="font-size: 12px; font-weight: 700; color: var(--gold); letter-spacing: 0.5px;">ADMINISTRATOR SESSION
+        ACTIVE</span>
+      <span class="muted" style="font-size: 12px; margin-left: 8px;">You have administrative access to oversee and
+        handle all platform users.</span>
+    </div>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    <a href="{% url 'manage_users' %}" class="btn" style="padding: 6px 14px; font-size: 11px;">
+      Manage Users Directory →
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- Financial Month Selector (Monthly Calculation Period) -->
+<div class="card pad"
+  style="margin-bottom: 20px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <span style="font-size: 18px;">🗓</span>
+    <div>
+      <div
+        style="font-size: 11px; letter-spacing: 1.2px; color: var(--gold); text-transform: uppercase; font-weight: 700;">
+        Monthly Calculation Period</div>
+      <div style="font-size: 16px; font-weight: 700; color: var(--text);">
+        {{ selected_month_name }}
+        {% if selected_month_num == default_financial_month %}
+        <span
+          style="font-size: 11px; background: #202b1d; color: var(--green); border: 1px solid #3c5438; padding: 2px 8px; border-radius: 10px; margin-left: 6px; font-weight: 600;">Current
+          Month</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+    <span class="muted" style="font-size: 11px; margin-right: 4px;">Select Month:</span>
+    {% for m in months_selector %}
+    <a href="?month={{ m.num }}#stats" class="btn {% if m.is_selected %}active{% else %}ghost{% endif %}"
+      style="padding: 4px 8px; font-size: 11px;">
+      {{ m.short_name }}
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Top Stats Row with Indian Commas -->
+<div class="stats" id="stats">
+  <div class="card stat">
+    <div class="statlabel">TOTAL ASSET VALUE</div>
+    <div class="statvalue">₹ {{ total_assets|inr }}</div>
+    <div class="muted">Live portfolio valuation (Villa + Supercars) · {{ total_assets|inr_words }}</div>
+  </div>
+
+  <div class="card stat">
+    <div class="statlabel">MONTHLY INCOME ({{ selected_month_name }})</div>
+    <div class="statvalue positive">₹ {{ monthly_income|inr }}</div>
+    <div class="positive">↑ Monthly Base Salary & Inflows</div>
+  </div>
+
+  <div class="card stat">
+    <div class="statlabel">MONTHLY EXPENSES ({{ selected_month_name }})</div>
+    <div class="statvalue negative">₹ {{ monthly_expenses|inr }}</div>
+    <div class="negative">Tracked monthly outflows & EMIs</div>
+  </div>
+
+  <div class="card stat">
+    <div class="statlabel">MONTHLY NET SURPLUS</div>
+    <div class="statvalue {% if monthly_surplus >= 0 %}positive{% else %}negative{% endif %}">
+      ₹ {{ monthly_surplus|inr }}
+    </div>
+    <div class="muted">Monthly Income less expenses</div>
+  </div>
+</div>
+
+<!-- Executive Capital Allocation & Strategic Wealth Scorecard (Clean, Non-Duplicate Overview) -->
+<section class="section" id="strategy-allocation">
+  <div class="card pad">
+    <div class="secthead" style="flex-wrap:wrap; gap:14px; align-items:center;">
+      <div>
+        <div class="eyebrow" style="margin-bottom:4px;">MONARCH EXECUTIVE STRATEGY</div>
+        <h2 class="secttitle" style="display:flex; align-items:center; gap:8px;">
+          <span>🏛</span> Capital Allocation & Wealth Trajectory
+        </h2>
+        <div class="sectsub">
+          Consolidated executive overview of annual wealth inflows, operational cash burn, and capital retention rate.
+        </div>
+      </div>
+      <div>
+        <a href="{% url 'financial_plan' %}" class="btn" style="background:rgba(213, 183, 123, 0.15); color:var(--gold); border-color:var(--gold);">
+          📊 Open 12-Month Projections & Trajectory Graphs ↗
+        </a>
+      </div>
+    </div>
+
+    <!-- Annual KPI Badges -->
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:20px; padding:14px; background:var(--panel2); border-radius:8px; border:1px solid var(--line);">
+      <div>
+        <div class="muted" style="font-size:11px; letter-spacing:1px; font-weight:600;">ANNUAL GROSS INFLOW</div>
+        <div style="font-size:17px; font-weight:700; color:var(--green); margin-top:3px;">₹ {{ annual_income|inr }}</div>
+      </div>
+      <div>
+        <div class="muted" style="font-size:11px; letter-spacing:1px; font-weight:600;">ANNUAL TOTAL OUTFLOW</div>
+        <div style="font-size:17px; font-weight:700; color:var(--red); margin-top:3px;">₹ {{ annual_expense|inr }}</div>
+      </div>
+      <div>
+        <div class="muted" style="font-size:11px; letter-spacing:1px; font-weight:600;">ANNUAL NET SURPLUS</div>
+        <div style="font-size:17px; font-weight:700; color:var(--gold); margin-top:3px;">₹ {{ annual_surplus|inr }}</div>
+      </div>
+      <div>
+        <div class="muted" style="font-size:11px; letter-spacing:1px; font-weight:600;">WEALTH SAVINGS RATE</div>
+        <div style="font-size:17px; font-weight:700; color:var(--gold); margin-top:3px;">{{ savings_rate }}%</div>
+      </div>
+      <div>
+        <div class="muted" style="font-size:11px; letter-spacing:1px; font-weight:600;">DEBT-TO-ASSET RATIO</div>
+        <div style="font-size:17px; font-weight:700; color:var(--text); margin-top:3px;">{{ debt_ratio }}%</div>
+      </div>
+    </div>
+
+    <!-- 3-Column Executive Strategy Deck -->
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+      <!-- Column 1: Inflow Generation Streams -->
+      <div style="background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div style="font-size:11px; color:var(--gold); font-weight:700; letter-spacing:1px; text-transform:uppercase;">Inflow Streams</div>
+          <span style="font-size:11px; color:var(--green); font-weight:700;">+ ₹ {{ annual_income|inr }}</span>
+        </div>
+        <div class="assetcost" style="margin-top:0;">
+          <div class="line" style="padding:8px 0;">
+            <span class="muted">Base Annual Salary (JPMC)</span>
+            <span style="color:var(--text); font-weight:600;">₹ {{ annual_salary|inr }}</span>
+          </div>
+          <div class="line" style="padding:8px 0;">
+            <span class="muted">Company Stocks & ESOPs</span>
+            <span style="color:var(--text); font-weight:600;">₹ {{ annual_stocks|inr }}</span>
+          </div>
+          <div class="line" style="padding:8px 0;">
+            <span class="muted">Private Consulting & Advisory</span>
+            <span style="color:var(--text); font-weight:600;">₹ {{ annual_freelance|inr }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Column 2: Annual Outflow Structure -->
+      <div style="background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div style="font-size:11px; color:var(--gold); font-weight:700; letter-spacing:1px; text-transform:uppercase;">Annual Outflow Structure</div>
+          <span style="font-size:11px; color:var(--red); font-weight:700;">− ₹ {{ annual_expense|inr }}</span>
+        </div>
+        <div class="assetcost" style="margin-top:0;">
+          <div class="line" style="padding:8px 0;">
+            <span class="muted">Debt & Liabilities (EMIs)</span>
+            <span style="color:var(--red); font-weight:600;">₹ {{ annual_liabilities|inr }}</span>
+          </div>
+          <div class="line" style="padding:8px 0;">
+            <span class="muted">Vehicle Fleet (Fuel, Maint, Ins)</span>
+            <span style="color:var(--text); font-weight:600;">₹ {{ annual_vehicles|inr }}</span>
+          </div>
+          <div class="line" style="padding:8px 0;">
+            <span class="muted">Residence Maintenance & Care</span>
+            <span style="color:var(--text); font-weight:600;">₹ {{ annual_villa|inr }}</span>
+          </div>
+          <div class="line" style="padding:8px 0;">
+            <span class="muted">Household, Travel & Health</span>
+            <span style="color:var(--text); font-weight:600;">₹ {{ annual_living|add:annual_travel|add:annual_health|inr }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Column 3: Capital Retention & Visual Model Notice -->
+      <div style="background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:18px; display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-size:11px; color:var(--gold); font-weight:700; letter-spacing:1px; text-transform:uppercase;">Capital Retention Velocity</div>
+            <span style="font-size:11px; color:var(--gold); font-weight:700;">{{ savings_rate }}% Saved</span>
+          </div>
+          <div style="font-size:22px; font-weight:700; color:var(--gold); font-family:'Playfair Display'; margin-bottom:4px;">
+            ₹ {{ annual_surplus|inr }}
+          </div>
+          <p class="muted" style="font-size:12px; margin:6px 0 14px; line-height:1.5;">
+            Net capital generated annually after debt servicing and asset operations.
+          </p>
+        </div>
+
+        <div style="background:#171914; border:1px solid rgba(213, 183, 123, 0.25); border-radius:6px; padding:10px 12px; margin-top:8px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <span style="font-size:11px; color:var(--muted); line-height:1.4;">
+              Full 12-Month visual trajectory charts & cashflow graphs are hosted in the dedicated plan.
+            </span>
+            <a href="{% url 'financial_plan' %}" class="btn" style="padding:6px 12px; font-size:11px; white-space:nowrap;">
+              Explore Plan →
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- The Collection Section -->
+<section class="section" id="collection">
+  <div class="secthead">
+    <div>
+      <h2 class="secttitle">The Collection</h2>
+      <div class="sectsub">Performance sports cars, supercars & luxury motorcycles</div>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <a href="{% url 'add_asset' %}" class="btn ghost">＋ Add Vehicle</a>
+      <button class="btn" onclick="openModal()">＋ Log Transaction</button>
+    </div>
+  </div>
+
+  <div class="assets">
+    {% for asset in collection_assets %}
+    <div class="card" style="cursor:pointer;" 
+         onclick="openShowcaseFromAsset(this)"
+         data-name="{{ asset.name }}"
+         data-image="{% if asset.image %}{{ asset.image.url }}{% elif asset.image_url %}{% static asset.image_url %}{% else %}{% static 'images/hayabusa_modified.jpg' %}{% endif %}"
+         data-val="₹ {{ asset.current_valuation|inr }}"
+         data-valwords="{{ asset.current_valuation|inr_words }}"
+         data-rawval="{{ asset.current_valuation|stringformat:'f' }}"
+         data-acq="₹ {{ asset.purchase_price|inr }}"
+         data-acqwords="{{ asset.purchase_price|inr_words }}"
+         data-rawacq="{{ asset.purchase_price|stringformat:'f' }}"
+         data-spec="{{ asset.specification }}"
+         data-tag="{{ asset.tag }}"
+         data-type="{{ asset.asset_type }}"
+         data-pin="{{ asset.pinterest_url|default:'' }}"
+         data-edit="{% url 'edit_asset' asset.id %}"
+         title="Click to view interactive omnidirectional showcase">
+      <div class="assetimg">
+        {% if asset.image %}
+        <img src="{{ asset.image.url }}" alt="{{ asset.name }}">
+        {% elif asset.image_url %}
+        <img src="{% static asset.image_url %}" alt="{{ asset.name }}">
+        {% else %}
+        <div class="fallback">🏍</div>
+        {% endif %}
+        <span class="tag">{{ asset.tag }}</span>
+
+        <span style="position:absolute; bottom:8px; right:8px; z-index:2; background:rgba(18,20,15,0.85); color:var(--gold); border:1px solid rgba(213,183,123,0.3); padding:3px 7px; border-radius:4px; font-size:10px; font-weight:600;">
+          ✦ View Showcase
+        </span>
+
+        {% if asset.pinterest_url %}
+        <a href="{{ asset.pinterest_url }}" target="_blank" onclick="event.stopPropagation()"
+          style="position:absolute; right:12px; top:12px; z-index:2; background:#e60023; color:#fff; text-decoration:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:700; letter-spacing:0.5px; box-shadow:0 2px 8px rgba(0,0,0,0.5);">
+          Pinterest ↗
+        </a>
+        {% endif %}
+      </div>
+      <div class="assetbody">
+        <div style="display:flex; justify-content:space-between; align-items:start;">
+          <div class="assetname">{{ asset.name }}</div>
+          <a href="{% url 'edit_asset' asset.id %}" onclick="event.stopPropagation()" class="btn ghost" style="padding:3px 7px; font-size:10px;"
+            title="Modify Asset">✎ Edit</a>
+        </div>
+        <div class="assetmeta">
+          <span>{{ asset.specification|truncatechars:42 }}</span>
+        </div>
+        <div class="assetvalue">₹ {{ asset.current_valuation|inr }} <small class="muted">({{ asset.current_valuation|inr_words }})</small></div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="card pad" style="grid-column: 1 / -1; text-align:center; padding:35px 20px;">
+      <div style="font-size:32px; margin-bottom:10px; color:var(--gold);">🏎</div>
+      <h3 style="color:var(--text); margin:0 0 6px; font-family:'Playfair Display';">No Vehicles in Collection</h3>
+      <p class="muted" style="max-width:400px; margin:0 auto 16px; font-size:13px;">
+        Add your performance cars, superbikes, or collectibles to track their market values and running costs.
+      </p>
+      <a href="{% url 'add_asset' %}" class="btn">＋ Add Your First Vehicle</a>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- The Residence Section -->
+<section class="section" id="property">
+  <div class="secthead">
+    <div>
+      <h2 class="secttitle">The Residence</h2>
+      <div class="sectsub">Your luxury villa and real estate portfolio (Click to view live omnidirectional showcase)</div>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <a href="{% url 'property' %}" class="btn ghost" style="padding:6px 14px; font-size:12px;">
+        🏰 Dedicated Showcase Page ↗
+      </a>
+      <a href="{% url 'property' %}?edit=1" class="btn" style="padding:6px 14px; font-size:12px;">
+        {% if villa %}✎ Edit Residence{% else %}＋ Add Property{% endif %}
+      </a>
+    </div>
+  </div>
+
+  {% if villa %}
+  <!-- Compact, Balanced Villa Showcase Card -->
+  <div class="card villa" onclick="openPropertyShowcase()" title="Click to view interactive omnidirectional showcase">
+    <div class="villaphoto">
+      {% if villa.image %}
+      <img src="{{ villa.image.url }}" alt="{{ villa.name }}">
+      {% elif villa.image_url %}
+      <img src="{% static villa.image_url %}" alt="{{ villa.name }}">
+      {% else %}
+      <img src="{% static 'images/villa.jpg' %}" alt="Private Villa">
+      {% endif %}
+
+      <div class="omni-badge" style="font-size:10px; padding:3px 8px; top:10px; left:10px;">
+        ✦ Interactive Showcase
+      </div>
+
+      {% if villa.pinterest_url %}
+      <a href="{{ villa.pinterest_url }}" target="_blank" onclick="event.stopPropagation()"
+        style="position:absolute; right:10px; top:10px; z-index:4; background:#e60023; color:#fff; text-decoration:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:700; box-shadow:0 2px 8px rgba(0,0,0,0.6);">
+        Pinterest ↗
+      </a>
+      {% endif %}
+    </div>
+    <div class="villainfo">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="tag" style="position:static; margin:0; font-size:10px;">REAL ESTATE</span>
+          {% if villa_appreciation > 0 %}
+          <span style="font-size:11px; color:var(--green); font-weight:700;">+ ₹ {{ villa_appreciation|inr }} (+{{ villa_appreciation_pct }}%)</span>
+          {% endif %}
+        </div>
+        <a href="{% url 'property' %}?edit=1" onclick="event.stopPropagation()" class="btn ghost" style="padding:3px 8px; font-size:10px;">✎ Modify</a>
+      </div>
+      <div class="assetname" style="font-size:20px; margin-bottom:2px;">{{ villa.name }}</div>
+      <div class="muted" style="font-size:13px;">{{ villa.specification|default:"Private luxury estate" }}</div>
+      <div class="villaamount" style="margin:6px 0 8px;">
+        <span style="font-size:22px; font-weight:700; color:var(--gold);">₹ {{ villa.current_valuation|inr }}</span>
+        <span class="muted" style="font-size:13px; font-weight:500; margin-left:6px;">({{ villa.current_valuation|inr_words }})</span>
+      </div>
+      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; padding-top:8px; border-top:1px solid var(--line); font-size:13px;">
+        <div>
+          <div class="muted" style="font-size:11px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase;">ACQUISITION</div>
+          <div style="color:var(--text); font-weight:600; margin-top:2px;">₹ {{ villa.purchase_price|inr }}</div>
+        </div>
+        <div>
+          <div class="muted" style="font-size:11px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase;">MORTGAGE EMI</div>
+          <div style="color:var(--text); font-weight:600; margin-top:2px;">₹ 35,000 / mo</div>
+        </div>
+        <div>
+          <div class="muted" style="font-size:11px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase;">CARE & UPKEEP</div>
+          <div style="color:var(--red); font-weight:600; margin-top:2px;">₹ 18,500 / mo</div>
+        </div>
+      </div>
+      <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="color:var(--gold); font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+          <span>✦</span> Click to view omnidirectional slow movement showcase ↗
+        </span>
+        <a href="{% url 'property' %}" onclick="event.stopPropagation()" class="btn ghost" style="padding:3px 8px; font-size:10px;">
+          Showcase View ↗
+        </a>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="card pad" style="text-align:center; padding:40px 20px;">
+    <div style="font-size:36px; margin-bottom:10px; color:var(--gold);">⌂</div>
+    <h3 style="color:var(--text); margin:0 0 8px; font-family:'Playfair Display';">No Property Added Yet</h3>
+    <p class="muted" style="max-width:440px; margin:0 auto 18px; font-size:13px; line-height:1.6;">
+      Register your primary villa, penthouse, or real estate property to track valuation appreciation, mortgage
+      balances, and upkeep expenses.
+    </p>
+    <a href="{% url 'property' %}" class="btn">＋ Add Residence / Property</a>
+  </div>
+  {% endif %}
+</section>
+
+<!-- Monthly Activity Ledger and Ownership Cost Mix -->
+<section class="section twocol">
+  <!-- Monthly Activity / Transactions Ledger -->
+  <div class="card pad" id="transactions">
+    <div class="secthead" style="align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+      <div>
+        <div
+          style="font-size: 11px; letter-spacing: 1.2px; color: var(--gold); text-transform: uppercase; font-weight: 700;">
+          {% if show_all_months %}All-Time Transaction Log{% else %}Monthly Calculation Period ({{ selected_month_name }}){% endif %}
+        </div>
+        <h2 class="secttitle" style="margin-top: 2px;">Monthly Activity Ledger</h2>
+        <div class="sectsub">Income & expense records attributed on a monthly basis to <b>{{ selected_month_name }}</b>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        {% if show_all_months %}
+        <a href="?month={{ selected_month_num }}#transactions" class="btn ghost"
+          style="padding: 6px 10px; font-size: 11px;">
+          Filter to {{ selected_month_name }}
+        </a>
+        {% else %}
+        <a href="?month={{ selected_month_num }}&all_months=1#transactions" class="btn ghost"
+          style="padding: 6px 10px; font-size: 11px;">
+          Show All Months
+        </a>
+        {% endif %}
+        <button class="btn" onclick="openModal()">＋ Record</button>
+      </div>
+    </div>
+
+    <!-- Monthly Summary Strip for Current Calculation Period -->
+    <div
+      style="display: flex; gap: 14px; margin-bottom: 14px; padding: 10px 14px; background: #20221c; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; flex-wrap: wrap; align-items: center;">
+      <span class="muted">Monthly Cycle: <b style="color:var(--text)">{{ selected_month_name }}</b></span>
+      <span style="color: var(--green); margin-left: auto;">Monthly Inflows: +₹ {{ monthly_income|inr }}</span>
+      <span style="color: var(--red);">Monthly Outflows: −₹ {{ monthly_expenses|inr }}</span>
+      <span style="color: var(--gold); font-weight: 700;">Net Surplus: ₹ {{ monthly_surplus|inr }}</span>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Description & Category</th>
+            <th>Asset Tag</th>
+            <th>Monthly Period</th>
+            <th>Amount</th>
+            <th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="rows">
+          {% for t in transactions %}
+          <tr>
+            <td>
+              <div class="category">
+                <span class="dot"></span>
+                <span><b>{{ t.title }}</b> <small class="muted">({{ t.get_category_display }})</small></span>
+              </div>
+            </td>
+            <td>{{ t.asset.name|default:"General" }}</td>
+            <td>
+              <span style="font-weight: 600; color: var(--gold);">Month {{ t.financial_month }}</span>
+              <small class="muted" style="display:block; font-size:10px;">{{ t.date|date:"d M Y" }}</small>
+            </td>
+            <td class="{% if t.transaction_type == 'INCOME' %}positive{% else %}negative{% endif %}"
+              style="font-weight:600;">
+              {% if t.transaction_type == 'INCOME' %}+{% else %}−{% endif %} ₹ {{ t.amount|inr }}
+            </td>
+            <td style="text-align:right; white-space:nowrap;">
+              <a href="{% url 'edit_transaction' t.id %}?next=dashboard" class="btn ghost"
+                style="padding:4px 7px; font-size:10px; margin-right:4px;" title="Modify Transaction">
+                ✎
+              </a>
+              <a href="{% url 'delete_transaction' t.id %}?next=dashboard" class="btn danger"
+                style="padding:4px 7px; font-size:10px;" onclick="return confirm('Delete this record?');"
+                title="Delete Transaction">
+                ✕
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="muted" style="text-align:center; padding:24px 16px;">
+              No transactions recorded for <b>{{ selected_month_name }}</b> yet.
+              <br><small style="margin-top:6px; display:inline-block;">Click '＋ Record' above to add monthly inflows or
+                asset expenses.</small>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Django Pagination Controls -->
+    {% if transactions.has_other_pages %}
+    <div class="pagination">
+      <span>Page {{ transactions.number }} of {{ transactions.paginator.num_pages }}</span>
+      <div class="pagelinks">
+        {% if transactions.has_previous %}
+        <a
+          href="?page={{ transactions.previous_page_number }}{% if selected_month_num %}&month={{ selected_month_num }}{% endif %}{% if show_all_months %}&all_months=1{% endif %}#transactions">«
+          Prev</a>
+        {% endif %}
+
+        {% for num in transactions.paginator.page_range %}
+        {% if transactions.number == num %}
+        <span class="current">{{ num }}</span>
+        {% elif num > transactions.number|add:'-3' and num < transactions.number|add:'3' %} <a
+          href="?page={{ num }}{% if selected_month_num %}&month={{ selected_month_num }}{% endif %}{% if show_all_months %}&all_months=1{% endif %}#transactions">
+          {{ num }}</a>
+          {% endif %}
+          {% endfor %}
+
+          {% if transactions.has_next %}
+          <a
+            href="?page={{ transactions.next_page_number }}{% if selected_month_num %}&month={{ selected_month_num }}{% endif %}{% if show_all_months %}&all_months=1{% endif %}#transactions">Next
+            »</a>
+          {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Cost of Ownership Breakdown -->
+  <div class="card pad" id="ownership">
+    <h2 class="secttitle">Cost of Ownership</h2>
+    <div class="sectsub">Monthly expense distribution across luxury assets</div>
+
+    <div class="barrow">
+      <div class="barlabel">
+        <span>Fuel & petrol (Vehicles & Bikes)</span>
+        <b>₹ {{ ownership_mix.fuel.amount|inr }}</b>
+      </div>
+      <div class="track">
+        <div class="fill" style="width: {{ ownership_mix.fuel.pct }}%;"></div>
+      </div>
+    </div>
+
+    <div class="barrow">
+      <div class="barlabel">
+        <span>Servicing, tyres & consumables</span>
+        <b>₹ {{ ownership_mix.servicing.amount|inr }}</b>
+      </div>
+      <div class="track">
+        <div class="fill" style="width: {{ ownership_mix.servicing.pct }}%;"></div>
+      </div>
+    </div>
+
+    <div class="barrow">
+      <div class="barlabel">
+        <span>Residence maintenance & utilities</span>
+        <b>₹ {{ ownership_mix.villa.amount|inr }}</b>
+      </div>
+      <div class="track">
+        <div class="fill" style="width: {{ ownership_mix.villa.pct }}%;"></div>
+      </div>
+    </div>
+
+    <div class="barrow">
+      <div class="barlabel">
+        <span>Comprehensive insurance & taxes</span>
+        <b>₹ {{ ownership_mix.insurance.amount|inr }}</b>
+      </div>
+      <div class="track">
+        <div class="fill" style="width: {{ ownership_mix.insurance.pct }}%;"></div>
+      </div>
+    </div>
+
+    <div class="barrow">
+      <div class="barlabel">
+        <span>Lifestyle, food & household</span>
+        <b>₹ {{ ownership_mix.lifestyle.amount|inr }}</b>
+      </div>
+      <div class="track">
+        <div class="fill" style="width: {{ ownership_mix.lifestyle.pct }}%;"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Interactive Omnidirectional Split Property Showcase Modal -->
+<div class="modal" id="propertyShowcaseModal" onclick="closePropertyModal(event)">
+  <div class="modalbox property-modal-box" onclick="event.stopPropagation()">
+    <button class="modal-close-btn" type="button" onclick="closePropertyModal()">&times;</button>
+    <div class="property-split-showcase">
+      <!-- Left: Omnidirectional slow moving image stage -->
+      <div class="omni-moving-stage" id="modalStageContainer">
+        <img id="modalShowcaseImg" class="omni-moving-img" 
+             src="{% if villa.image %}{{ villa.image.url }}{% elif villa.image_url %}{% static villa.image_url %}{% else %}{% static 'images/villa.jpg' %}{% endif %}" 
+             alt="Showcase View">
+        <div class="omni-overlay"></div>
+        <div class="omni-badge">✦ Live Omnidirectional View · Floating Motion</div>
+        <div id="modalShowcaseTag" class="omni-stage-tag">
+          {{ villa.tag|default:"REAL ESTATE" }}
+        </div>
+        <div class="omni-controls">
+          <button type="button" class="omni-ctrl-btn" id="modalMotionToggleBtn" onclick="toggleModalMotion()">
+            <span id="modalMotionIcon">⏸</span> <span id="modalMotionLabel">Pause Motion</span>
+          </button>
+          <button type="button" class="omni-ctrl-btn" onclick="toggleModalFullscreen()">
+            <span>⛶</span> Full View
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: Details panel -->
+      <div class="property-details-panel">
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+            <div>
+              <div id="modalShowcaseSub" class="eyebrow">MONARCH REAL ESTATE ASSET</div>
+              <h2 id="modalShowcaseTitle" style="font: 600 24px 'Playfair Display'; color: var(--text); margin: 4px 0 2px;">
+                {{ villa.name|default:"Private Luxury Villa Estate" }}
+              </h2>
+              <div style="font-size: 24px; font-weight: 700; color: var(--gold); font-family: 'Playfair Display'; margin: 2px 0 6px;">
+                <span id="modalShowcaseValTop">₹ {{ villa.current_valuation|inr }}</span>
+                <span id="modalShowcaseValWordsTop" style="font-size: 14px; font-weight: 500; color: var(--muted); font-family: 'DM Sans';">({{ villa.current_valuation|inr_words }})</span>
+              </div>
+            </div>
+            <span id="modalShowcaseApprecBadge" style="background: rgba(165, 198, 154, 0.15); border: 1px solid var(--green); color: var(--green); font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 20px; white-space:nowrap; {% if not villa_appreciation or villa_appreciation <= 0 %}display:none;{% endif %}">
+              + ₹ {{ villa_appreciation|inr }} Net Gain
+            </span>
+          </div>
+
+          <p id="modalShowcaseSpec" class="muted" style="margin: 8px 0 14px; font-size: 14px; line-height: 1.6;">
+            {{ villa.specification|default:"Ultra-luxury residence with private landscaped grounds and infinity pool." }}
+          </p>
+
+          <div class="property-metric-grid">
+            <div class="property-metric-card">
+              <div class="label" id="modalCard1Label">CURRENT MARKET VALUATION</div>
+              <div class="val" id="modalShowcaseVal" style="color:var(--gold);">₹ {{ villa.current_valuation|inr }}</div>
+              <small id="modalShowcaseValWords" class="muted">{{ villa.current_valuation|inr_words }}</small>
+            </div>
+            <div class="property-metric-card">
+              <div class="label" id="modalCard2Label">ACQUISITION PRICE</div>
+              <div class="val" id="modalShowcaseAcq">₹ {{ villa.purchase_price|inr }}</div>
+              <small id="modalShowcaseAcqWords" class="muted">Purchase Value</small>
+            </div>
+            <div class="property-metric-card">
+              <div class="label" id="modalCard3Label">MONTHLY UPKEEP & CARE</div>
+              <div class="val" id="modalShowcaseMaint" style="color:var(--red);">₹ 18,500 / mo</div>
+              <small id="modalShowcaseMaintSub" class="muted">Villa Maintenance</small>
+            </div>
+            <div class="property-metric-card">
+              <div class="label" id="modalCard4Label">EST. MORTGAGE FINANCING</div>
+              <div class="val" id="modalShowcaseEmi">₹ 35,000 / mo</div>
+              <small id="modalShowcaseEmiSub" class="muted">Active Loan Commitment</small>
+            </div>
+          </div>
+
+          <div id="modalShowcaseShareBox" style="background: var(--panel2); border-radius: 8px; border: 1px solid var(--line); padding: 12px 14px; margin-top: 10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size: 11px; margin-bottom: 6px;">
+              <span class="muted" style="font-weight:600;" id="modalShowcaseShareLabel">PORTFOLIO WEALTH WEIGHT</span>
+              <span id="modalShowcaseShare" style="color:var(--gold); font-weight:700;">72.5% of Total Assets</span>
+            </div>
+            <div class="track"><div id="modalShowcaseTrack" class="fill" style="width: 72.5%;"></div></div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:18px; align-items:center; flex-wrap:wrap;">
+          <a id="modalShowcaseEditBtn" href="{% url 'property' %}?edit=1" class="btn" style="flex:1; justify-content:center;">
+            ✎ Modify Residence
+          </a>
+          <a id="modalShowcasePinBtn" href="{% if villa.pinterest_url %}{{ villa.pinterest_url }}{% else %}#{% endif %}" target="_blank" class="btn ghost" style="{% if not villa.pinterest_url %}display:none;{% endif %} color:#e60023; border-color:rgba(230,0,35,0.4);">
+            Pinterest ↗
+          </a>
+          <a id="modalShowcaseFullPageBtn" href="{% url 'property' %}" class="btn ghost" style="font-size:11px;">
+            Full Page View ↗
+          </a>
+          <button type="button" class="btn ghost" onclick="closePropertyModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const TOTAL_ASSETS_NUM = parseFloat("{{ total_assets|default:0|stringformat:'f' }}") || 0;
+  let isModalMoving = true;
+
+  function openPropertyShowcase() {
+    const modal = document.getElementById('propertyShowcaseModal');
+    if (modal) {
+      document.getElementById('modalShowcaseImg').src = "{% if villa.image %}{{ villa.image.url }}{% elif villa.image_url %}{% static villa.image_url %}{% else %}{% static 'images/villa.jpg' %}{% endif %}";
+      document.getElementById('modalShowcaseTag').textContent = "REAL ESTATE";
+      document.getElementById('modalShowcaseSub').textContent = "MONARCH REAL ESTATE ASSET";
+      document.getElementById('modalShowcaseTitle').textContent = "{{ villa.name|default:'Private Luxury Villa Estate'|escapejs }}";
+      document.getElementById('modalShowcaseSpec').textContent = "{{ villa.specification|default:'Ultra-luxury residence with private landscaped grounds and infinity pool.'|escapejs }}";
+      document.getElementById('modalShowcaseValTop').textContent = "₹ {{ villa.current_valuation|inr }}";
+      document.getElementById('modalShowcaseValWordsTop').textContent = "({{ villa.current_valuation|inr_words }})";
+      document.getElementById('modalCard1Label').textContent = "CURRENT MARKET VALUATION";
+      document.getElementById('modalShowcaseVal').textContent = "₹ {{ villa.current_valuation|inr }}";
+      document.getElementById('modalShowcaseValWords').textContent = "{{ villa.current_valuation|inr_words }}";
+      document.getElementById('modalCard2Label').textContent = "ACQUISITION PRICE";
+      document.getElementById('modalShowcaseAcq').textContent = "₹ {{ villa.purchase_price|inr }}";
+      document.getElementById('modalShowcaseAcqWords').textContent = "Purchase Cost";
+      document.getElementById('modalCard3Label').textContent = "MONTHLY UPKEEP & CARE";
+      document.getElementById('modalShowcaseMaint').textContent = "₹ 18,500 / mo";
+      document.getElementById('modalShowcaseMaint').style.color = "var(--red)";
+      document.getElementById('modalShowcaseMaintSub').textContent = "Villa Maintenance";
+      document.getElementById('modalCard4Label').textContent = "EST. MORTGAGE FINANCING";
+      document.getElementById('modalShowcaseEmi').textContent = "₹ 35,000 / mo";
+      document.getElementById('modalShowcaseEmiSub').textContent = "Active Loan Commitment";
+      
+      const villaVal = parseFloat("{{ villa.current_valuation|default:0|stringformat:'f' }}") || 0;
+      if (TOTAL_ASSETS_NUM > 0 && villaVal > 0) {
+        const sharePct = Math.min(100, Math.round((villaVal / TOTAL_ASSETS_NUM) * 1000) / 10);
+        document.getElementById('modalShowcaseShare').textContent = sharePct + '% of Total Assets';
+        document.getElementById('modalShowcaseTrack').style.width = sharePct + '%';
+      } else {
+        document.getElementById('modalShowcaseShare').textContent = 'Primary Real Estate';
+        document.getElementById('modalShowcaseTrack').style.width = '60%';
+      }
+
+      document.getElementById('modalShowcaseEditBtn').href = "{% url 'property' %}?edit=1";
+      document.getElementById('modalShowcaseEditBtn').textContent = "✎ Modify Residence";
+      document.getElementById('modalShowcaseFullPageBtn').style.display = "inline-flex";
+      
+      {% if villa.pinterest_url %}
+      document.getElementById('modalShowcasePinBtn').href = "{{ villa.pinterest_url }}";
+      document.getElementById('modalShowcasePinBtn').style.display = 'inline-flex';
+      {% else %}
+      document.getElementById('modalShowcasePinBtn').style.display = 'none';
+      {% endif %}
+
+      {% if villa_appreciation and villa_appreciation > 0 %}
+      document.getElementById('modalShowcaseApprecBadge').textContent = "+ ₹ {{ villa_appreciation|inr }} Net Gain";
+      document.getElementById('modalShowcaseApprecBadge').style.display = 'inline-block';
+      {% else %}
+      document.getElementById('modalShowcaseApprecBadge').style.display = 'none';
+      {% endif %}
+
+      modal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  function openShowcaseFromAsset(card) {
+    const modal = document.getElementById('propertyShowcaseModal');
+    if (!modal || !card) return;
+
+    const name = card.dataset.name || 'Luxury Asset';
+    const img = card.dataset.image;
+    const val = card.dataset.val || '₹ 0';
+    const valWords = card.dataset.valwords || '';
+    const rawVal = parseFloat(card.dataset.rawval || '0');
+    const acq = card.dataset.acq || '₹ 0';
+    const rawAcq = parseFloat(card.dataset.rawacq || '0');
+    const spec = card.dataset.spec || 'High-performance collectible';
+    const tag = card.dataset.tag || 'COLLECTION';
+    const assetType = (card.dataset.type || '').toLowerCase();
+    const pin = card.dataset.pin || '';
+    const editUrl = card.dataset.edit || '#';
+
+    document.getElementById('modalShowcaseImg').src = img;
+    document.getElementById('modalShowcaseTag').textContent = tag;
+    document.getElementById('modalShowcaseSub').textContent = 'MONARCH LUXURY COLLECTION';
+    document.getElementById('modalShowcaseTitle').textContent = name;
+    document.getElementById('modalShowcaseSpec').textContent = spec;
+    document.getElementById('modalShowcaseValTop').textContent = val;
+    document.getElementById('modalShowcaseValWordsTop').textContent = valWords ? '(' + valWords + ')' : '';
+    document.getElementById('modalCard1Label').textContent = 'CURRENT MARKET VALUATION';
+    document.getElementById('modalShowcaseVal').textContent = val;
+    document.getElementById('modalShowcaseValWords').textContent = valWords;
+    document.getElementById('modalCard2Label').textContent = 'ACQUISITION PRICE';
+    document.getElementById('modalShowcaseAcq').textContent = acq;
+    document.getElementById('modalShowcaseAcqWords').textContent = 'Acquisition Price';
+
+    // Tailored running costs & ownership metrics based on vehicle type
+    document.getElementById('modalCard3Label').textContent = 'EST. MONTHLY RUNNING';
+    if (assetType === 'bike' || tag.toLowerCase().includes('motorcycle') || tag.toLowerCase().includes('bike')) {
+      document.getElementById('modalShowcaseMaint').textContent = '₹ 7,500 / mo';
+      document.getElementById('modalShowcaseMaintSub').textContent = 'Fuel & Routine Care';
+    } else {
+      document.getElementById('modalShowcaseMaint').textContent = '₹ 15,000 / mo';
+      document.getElementById('modalShowcaseMaintSub').textContent = 'Fuel, Insurance & Servicing';
+    }
+    document.getElementById('modalShowcaseMaint').style.color = 'var(--text)';
+
+    document.getElementById('modalCard4Label').textContent = 'PORTFOLIO STATUS';
+    document.getElementById('modalShowcaseEmi').textContent = 'Fully Owned';
+    document.getElementById('modalShowcaseEmiSub').textContent = 'Private Vehicle Collection';
+
+    // Real-time calculated share of total wealth portfolio
+    if (TOTAL_ASSETS_NUM > 0 && rawVal > 0) {
+      const sharePct = Math.min(100, Math.round((rawVal / TOTAL_ASSETS_NUM) * 1000) / 10);
+      document.getElementById('modalShowcaseShare').textContent = sharePct + '% of Total Assets';
+      document.getElementById('modalShowcaseTrack').style.width = sharePct + '%';
+    } else {
+      document.getElementById('modalShowcaseShare').textContent = 'Collection Asset';
+      document.getElementById('modalShowcaseTrack').style.width = '25%';
+    }
+
+    // Appreciation badge if value preserved or gained
+    if (rawVal > rawAcq && rawAcq > 0) {
+      const diff = rawVal - rawAcq;
+      document.getElementById('modalShowcaseApprecBadge').textContent = 'Value Preserved / Appreciating';
+      document.getElementById('modalShowcaseApprecBadge').style.display = 'inline-block';
+    } else {
+      document.getElementById('modalShowcaseApprecBadge').style.display = 'none';
+    }
+
+    // Action buttons
+    document.getElementById('modalShowcaseEditBtn').href = editUrl;
+    document.getElementById('modalShowcaseEditBtn').textContent = '✎ Modify Vehicle';
+    document.getElementById('modalShowcaseFullPageBtn').style.display = 'none'; // Only for Residence/Villa
+
+    const pinBtn = document.getElementById('modalShowcasePinBtn');
+    if (pin) {
+      pinBtn.href = pin;
+      pinBtn.style.display = 'inline-flex';
+    } else {
+      pinBtn.style.display = 'none';
+    }
+
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closePropertyModal(e) {
+    if (e && e.target && e.target.closest && e.target.closest('.property-modal-box') && !e.target.classList.contains('modal-close-btn')) {
+      return;
+    }
+    const modal = document.getElementById('propertyShowcaseModal');
+    if (modal) {
+      modal.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  }
+
+  function toggleModalMotion() {
+    const stage = document.getElementById('modalStageContainer');
+    const icon = document.getElementById('modalMotionIcon');
+    const label = document.getElementById('modalMotionLabel');
+    if (isModalMoving) {
+      stage.classList.add('paused');
+      icon.textContent = '▶';
+      label.textContent = 'Play';
+      isModalMoving = false;
+    } else {
+      stage.classList.remove('paused');
+      icon.textContent = '⏸';
+      label.textContent = 'Pause';
+      isModalMoving = true;
+    }
+  }
+
+  function toggleModalFullscreen() {
+    const stage = document.getElementById('modalStageContainer');
+    if (!document.fullscreenElement) {
+      if (stage.requestFullscreen) {
+        stage.requestFullscreen();
+      } else if (stage.webkitRequestFullscreen) {
+        stage.webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closePropertyModal();
+    }
+  });
+</script>
+{% endblock %}

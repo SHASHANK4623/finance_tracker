@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load currency_tags %}
+
+{% block title %}MONARCH — User Profile & Wealth Persona{% endblock %}
+
+{% block content %}
+<div class="card pad" style="max-width: 800px; margin: 0 auto;">
+  <div class="secthead">
+    <div>
+      <h2 class="secttitle">Wealth Persona Profile</h2>
+      <div class="sectsub">Manage your JPMC employment credentials, CTC package, and profile avatar.</div>
+    </div>
+  </div>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div style="display:flex; align-items:center; gap:24px; margin-bottom:28px; padding-bottom:24px; border-bottom:1px solid var(--line);">
+      <div style="position:relative;">
+        {% if profile.avatar %}
+          <img src="{{ profile.avatar.url }}" alt="{{ profile.user.username }}" 
+               style="width:90px; height:90px; border-radius:50%; object-fit:cover; border:2px solid var(--gold);">
+        {% else %}
+          <div style="width:90px; height:90px; border-radius:50%; background:#252720; border:2px dashed var(--gold); display:grid; place-items:center; font-size:32px; color:var(--gold);">
+            ♙
+          </div>
+        {% endif %}
+      </div>
+
+      <div style="flex:1;">
+        <h3 style="margin:0 0 4px; font-family:'Playfair Display'; font-size:22px; color:var(--text);">
+          {{ user.first_name }} {{ user.last_name }} <small class="muted" style="font-size:12px;">(@{{ user.username }})</small>
+        </h3>
+        <div style="color:var(--gold); font-size:13px; margin-bottom:10px;">{{ profile.occupation }}</div>
+        
+        <div class="field" style="margin:0;">
+          <label>Upload Profile Picture (Max 3MB · JPG, PNG, WEBP)</label>
+          {{ form.avatar }}
+          {% if form.avatar.errors %}
+            <div class="field-error">{{ form.avatar.errors.0 }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+      <div class="field">
+        <label>First Name</label>
+        {{ form.first_name }}
+      </div>
+      <div class="field">
+        <label>Last Name</label>
+        {{ form.last_name }}
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Email Address</label>
+      {{ form.email }}
+    </div>
+
+    <div style="display:grid; grid-template-columns:1.2fr 0.8fr; gap:16px;">
+      <div class="field">
+        <label>Occupation / Organization</label>
+        {{ form.occupation }}
+      </div>
+      <div class="field">
+        <label>Annual CTC (INR)</label>
+        {{ form.annual_ctc }}
+        <small class="muted" style="display:block; margin-top:4px;">
+          Monthly Base: ₹ {{ profile.monthly_salary|inr }}
+        </small>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+      <div class="field">
+        <label>Phone Number</label>
+        {{ form.phone }}
+      </div>
+      <div class="field">
+        <label>Location</label>
+        {{ form.location }}
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Bio / Persona Notes</label>
+      {{ form.bio }}
+    </div>
+
+    <div style="margin-top:24px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+      <button type="submit" class="btn">Update Profile</button>
+      <a href="{% url 'dashboard' %}" class="btn ghost">Cancel</a>
+      <div style="margin-left:auto; display:flex; gap:8px; flex-wrap:wrap;">
+        <a href="{% url 'property' %}" class="btn ghost" style="font-size:11px;">⌂ Give / Edit Property</a>
+        <a href="{% url 'add_asset' %}" class="btn ghost" style="font-size:11px;">🏎 Add Vehicle</a>
+        <a href="{% url 'financial_plan' %}" class="btn ghost" style="font-size:11px;">📊 1-Year Financial Plan</a>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

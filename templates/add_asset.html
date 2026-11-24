@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load currency_tags %}
+
+{% block title %}MONARCH — Add Asset to Portfolio{% endblock %}
+
+{% block content %}
+<div class="card pad" style="max-width: 780px; margin: 0 auto;">
+  <div class="secthead">
+    <div>
+      <h2 class="secttitle">＋ Add Asset to Collection</h2>
+      <div class="sectsub">Register high-performance motorcycles, sports cars, company equity, luxury watches, or collectibles.</div>
+    </div>
+  </div>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="field">
+      <label>Asset Name</label>
+      {{ form.name }}
+      <small class="muted" style="margin-top:4px; display:block;">e.g. Ducati Panigale V4 S, Porsche 911 GT3, Rolex Daytona</small>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+      <div class="field">
+        <label>Asset Category / Type</label>
+        {{ form.asset_type }}
+      </div>
+      <div class="field">
+        <label>Display Tag (e.g. MOTORCYCLE 03, CAR 02)</label>
+        {{ form.tag }}
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+      <div class="field">
+        <label>Current Valuation (₹)</label>
+        {{ form.current_valuation }}
+      </div>
+      <div class="field">
+        <label>Purchase Price (₹)</label>
+        {{ form.purchase_price }}
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Technical Specifications / Details</label>
+      {{ form.specification }}
+      <small class="muted" style="margin-top:4px; display:block;">e.g. 1103cc · 215 bhp · Akrapovič Titanium Full Exhaust</small>
+    </div>
+
+    <div class="field">
+      <label>Pinterest Link (URL)</label>
+      {{ form.pinterest_url }}
+    </div>
+
+    <div class="field">
+      <label>Asset Photo (Upload File or Static Image Path)</label>
+      <div style="margin-bottom:8px;">{{ form.image }}</div>
+      {{ form.image_url }}
+    </div>
+
+    <div style="margin-top:28px; display:flex; gap:12px;">
+      <button type="submit" class="btn">Add to Portfolio</button>
+      <a href="{% url 'dashboard' %}#collection" class="btn ghost">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

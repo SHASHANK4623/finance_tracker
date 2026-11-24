@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load currency_tags %}
+
+{% block title %}MONARCH — Edit Property / Asset{% endblock %}
+
+{% block content %}
+<div class="card pad" style="max-width: 750px; margin: 0 auto;">
+  <div class="secthead">
+    <div>
+      <h2 class="secttitle">Modify Property / Asset</h2>
+      <div class="sectsub">Update valuation, specifications, or Pinterest reference link for {{ asset.name }}.</div>
+    </div>
+  </div>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="field">
+      <label>Asset Name</label>
+      {{ form.name }}
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+      <div class="field">
+        <label>Asset Type</label>
+        {{ form.asset_type }}
+      </div>
+      <div class="field">
+        <label>Display Tag</label>
+        {{ form.tag }}
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+      <div class="field">
+        <label>Current Valuation (₹)</label>
+        {{ form.current_valuation }}
+        <small class="muted" style="margin-top:4px; display:block;">Current: ₹ {{ asset.current_valuation|inr }}</small>
+      </div>
+      <div class="field">
+        <label>Purchase Price (₹)</label>
+        {{ form.purchase_price }}
+        <small class="muted" style="margin-top:4px; display:block;">Purchase: ₹ {{ asset.purchase_price|inr }}</small>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Specifications / Description</label>
+      {{ form.specification }}
+    </div>
+
+    <div class="field">
+      <label>Pinterest Link (URL)</label>
+      {{ form.pinterest_url }}
+      {% if asset.pinterest_url %}
+        <small style="margin-top:4px; display:block;">
+          <a href="{{ asset.pinterest_url }}" target="_blank" style="color:var(--gold); text-decoration:none;">View current Pin ↗</a>
+        </small>
+      {% endif %}
+    </div>
+
+    <div class="field">
+      <label>Static Image Path or Upload Photo</label>
+      {{ form.image_url }}
+      <div style="margin-top:8px;">{{ form.image }}</div>
+    </div>
+
+    <div style="margin-top:24px; display:flex; gap:12px; align-items:center;">
+      <button type="submit" class="btn">Save Changes</button>
+      <a href="{% url 'dashboard' %}" class="btn ghost">Cancel</a>
+      <a href="{% url 'delete_asset' asset.id %}" class="btn danger" style="margin-left:auto;" onclick="return confirm('Remove this asset from your portfolio?');">
+        ✕ Remove Asset
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% load currency_tags %}
+
+{% block title %}MONARCH — 1 Financial Year Analysis & Projections{% endblock %}
+
+{% block content %}
+<div class="stats" style="margin-bottom:28px;">
+  <div class="card stat">
+    <div class="statlabel">ANNUAL PROJECTED SALARY</div>
+    <div class="statvalue">₹ {{ year_salary|inr }}</div>
+    <div class="muted">Base Annual Salary Package (12 Months)</div>
+  </div>
+
+  <div class="card stat">
+    <div class="statlabel">ANNUAL GROSS INFLOW</div>
+    <div class="statvalue positive">₹ {{ year_total_income|inr }}</div>
+    <div class="positive">Salary + Stocks + Freelancing</div>
+  </div>
+
+  <div class="card stat">
+    <div class="statlabel">ANNUAL TOTAL OUTFLOWS</div>
+    <div class="statvalue negative">₹ {{ year_total_expense|inr }}</div>
+    <div class="negative">Liabilities EMI + Living + Asset Care</div>
+  </div>
+
+  <div class="card stat">
+    <div class="statlabel">ANNUAL NET SURPLUS</div>
+    <div class="statvalue positive">₹ {{ year_surplus|inr }}</div>
+    <div class="positive">Projected 1-Year Net Wealth Generation · {{ savings_rate }}% Saved</div>
+  </div>
+</div>
+
+<!-- 12-Month Graphical Presentation Chart -->
+<div class="card pad" style="margin-bottom:28px;">
+  <div class="secthead">
+    <div>
+      <h2 class="secttitle" style="display:flex; align-items:center; gap:8px;">
+        <span>📊</span> 12-Month Visual Trajectory (FY 2026–2027)
+      </h2>
+      <div class="sectsub">
+        Comparative view of projected inflows, total outflows, and net savings across all 12 financial months.
+      </div>
+    </div>
+  </div>
+
+  <div style="height: 320px; position: relative;">
+    <canvas id="planTrajectoryChart"></canvas>
+  </div>
+
+  <div style="display:flex; justify-content:center; gap:24px; margin-top:14px; padding-top:12px; border-top:1px solid var(--line); font-size:12px;" class="muted">
+    <div><span style="display:inline-block; width:12px; height:12px; background:#a5c69a; border-radius:2px; vertical-align:middle; margin-right:6px;"></span> Monthly Inflow</div>
+    <div><span style="display:inline-block; width:12px; height:12px; background:#d99482; border-radius:2px; vertical-align:middle; margin-right:6px;"></span> Total Outflows</div>
+    <div><span style="display:inline-block; width:12px; height:3px; background:#d5b77b; vertical-align:middle; margin-right:6px;"></span> Net Wealth Surplus</div>
+  </div>
+</div>
+
+<div class="card pad">
+  <div class="secthead">
+    <div>
+      <h2 class="secttitle">1 Financial Year Model (12 Months Projections Table)</h2>
+      <div class="sectsub">
+        Calculated for Financial Year 2026–2027. Default assets & liabilities pre-populated across all months. Click ✎ to modify any month.
+      </div>
+    </div>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th>Salary Income</th>
+          <th>ESOPs / Stocks</th>
+          <th>Freelancing</th>
+          <th>Liabilities (EMI)</th>
+          <th>Vehicle Expenses</th>
+          <th>Residence Care</th>
+          <th>Living & Health</th>
+          <th>Monthly Surplus</th>
+          <th style="text-align:right">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for plan in plans %}
+        <tr>
+          <td><b>{{ plan.month_name }}</b></td>
+          <td class="positive">₹ {{ plan.salary_income|inr }}</td>
+          <td class="positive">₹ {{ plan.stocks_esops|inr }}</td>
+          <td class="positive">₹ {{ plan.freelance_income|inr }}</td>
+          <td class="negative">₹ {{ plan.liabilities_emi|inr }}</td>
+          <td class="negative">₹ {{ plan.vehicle_expenses|inr }}</td>
+          <td class="negative">₹ {{ plan.villa_maintenance|inr }}</td>
+          <td class="negative">₹ {{ plan.food_expenses|add:plan.household_expenses|add:plan.travel_expenses|add:plan.health_expenses|inr }}</td>
+          <td class="{% if plan.projected_surplus >= 0 %}positive{% else %}negative{% endif %}" style="font-weight:600;">
+            ₹ {{ plan.projected_surplus|inr }}
+          </td>
+          <td style="text-align:right">
+            <a href="{% url 'edit_financial_plan' plan.id %}" class="btn ghost" style="padding:4px 8px; font-size:10px;">
+              ✎ Edit
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr style="border-top: 2px solid var(--gold); font-weight:700;">
+          <td>FULL YEAR TOTAL</td>
+          <td class="positive">₹ {{ year_salary|inr }}</td>
+          <td class="positive">₹ {{ year_stocks|inr }}</td>
+          <td class="positive">₹ {{ year_freelance|inr }}</td>
+          <td colspan="3" class="negative" style="text-align:center;">Total Outflows: ₹ {{ year_total_expense|inr }}</td>
+          <td colspan="3" class="positive" style="text-align:right; font-size:14px; color:var(--gold);">
+            Net Surplus: ₹ {{ year_surplus|inr }}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const planChartData = {{ charts_json|safe }};
+  const ctxTrajectory = document.getElementById('planTrajectoryChart');
+  if (ctxTrajectory && window.Chart) {
+    new Chart(ctxTrajectory, {
+      type: 'bar',
+      data: {
+        labels: planChartData.months,
+        datasets: [
+          {
+            type: 'line',
+            label: 'Net Surplus',
+            data: planChartData.surplus,
+            borderColor: '#d5b77b',
+            backgroundColor: 'rgba(213, 183, 123, 0.12)',
+            borderWidth: 2.5,
+            pointBackgroundColor: '#d5b77b',
+            pointBorderColor: '#171915',
+            pointRadius: 4,
+            tension: 0.35,
+            fill: true,
+            order: 1
+          },
+          {
+            type: 'bar',
+            label: 'Projected Inflow',
+            data: planChartData.incomes,
+            backgroundColor: '#a5c69a',
+            borderRadius: 4,
+            barPercentage: 0.55,
+            order: 2
+          },
+          {
+            type: 'bar',
+            label: 'Total Outflows',
+            data: planChartData.expenses,
+            backgroundColor: '#d99482',
+            borderRadius: 4,
+            barPercentage: 0.55,
+            order: 3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1f211b',
+            titleColor: '#d5b77b',
+            bodyColor: '#f3efe6',
+            borderColor: '#303229',
+            borderWidth: 1,
+            padding: 10,
+            callbacks: {
+              label: function(context) {
+                let val = context.parsed.y || 0;
+                return context.dataset.label + ': ₹ ' + Number(val).toLocaleString('en-IN');
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+            ticks: { color: '#99998e', font: { family: 'DM Sans', size: 11 } }
+          },
+          y: {
+            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+            ticks: {
+              color: '#99998e',
+              font: { family: 'DM Sans', size: 11 },
+              callback: function(val) {
+                if (val >= 10000000) return '₹' + (val / 10000000).toFixed(1) + ' Cr';
+                if (val >= 100000) return '₹' + (val / 100000).toFixed(1) + ' L';
+                if (val >= 1000) return '₹' + (val / 1000).toFixed(0) + ' K';
+                return '₹' + val;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}

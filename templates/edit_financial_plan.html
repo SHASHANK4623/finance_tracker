@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load currency_tags %}
+
+{% block title %}MONARCH — Edit Month Projections{% endblock %}
+
+{% block content %}
+<div class="card pad" style="max-width: 750px; margin: 0 auto;">
+  <div class="secthead">
+    <div>
+      <h2 class="secttitle">Modify {{ plan.month_name }} Projections</h2>
+      <div class="sectsub">Adjust income streams, vehicle costs, villa maintenance, or EMIs for this financial month.</div>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <h3 style="color:var(--gold); font-size:16px; margin:18px 0 10px; font-family:'Playfair Display'; border-bottom:1px solid var(--line); padding-bottom:6px;">
+      1. Projected Incomes
+    </h3>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+      <div class="field">
+        <label>Monthly Salary (JPMC)</label>
+        {{ form.salary_income }}
+      </div>
+      <div class="field">
+        <label>ESOPs & Company Stocks</label>
+        {{ form.stocks_esops }}
+      </div>
+      <div class="field">
+        <label>Freelancing Advisory</label>
+        {{ form.freelance_income }}
+      </div>
+      <div class="field">
+        <label>Gifts & Bonuses</label>
+        {{ form.gifts_bonus }}
+      </div>
+    </div>
+
+    <h3 style="color:var(--gold); font-size:16px; margin:22px 0 10px; font-family:'Playfair Display'; border-bottom:1px solid var(--line); padding-bottom:6px;">
+      2. Liabilities & Asset Maintenance
+    </h3>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+      <div class="field">
+        <label>Liabilities / EMIs (Villa & Car Loans)</label>
+        {{ form.liabilities_emi }}
+      </div>
+      <div class="field">
+        <label>Vehicle Expenses (Fuel, Tyres, Servicing)</label>
+        {{ form.vehicle_expenses }}
+      </div>
+      <div class="field">
+        <label>Villa Maintenance & Utilities</label>
+        {{ form.villa_maintenance }}
+      </div>
+    </div>
+
+    <h3 style="color:var(--gold); font-size:16px; margin:22px 0 10px; font-family:'Playfair Display'; border-bottom:1px solid var(--line); padding-bottom:6px;">
+      3. Living & Lifestyle Outflows
+    </h3>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+      <div class="field">
+        <label>Food & Groceries</label>
+        {{ form.food_expenses }}
+      </div>
+      <div class="field">
+        <label>Household Expenses</label>
+        {{ form.household_expenses }}
+      </div>
+      <div class="field">
+        <label>Travel & Leisure</label>
+        {{ form.travel_expenses }}
+      </div>
+      <div class="field">
+        <label>Health & Wellness</label>
+        {{ form.health_expenses }}
+      </div>
+    </div>
+
+    <div style="margin-top:28px; display:flex; gap:12px;">
+      <button type="submit" class="btn">Update Month {{ plan.month_number }}</button>
+      <a href="{% url 'financial_plan' %}" class="btn ghost">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

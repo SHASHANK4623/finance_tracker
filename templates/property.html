@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% load currency_tags %}
+{% load static %}
+
+{% block title %}MONARCH — Property Showcase · {{ asset.name }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 22px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div>
+      <div class="eyebrow" style="margin-bottom:4px;">
+        <a href="{% url 'dashboard' %}" style="color:var(--muted); text-decoration:none;">Overview</a> / 
+        <span style="color:var(--gold);">Property & Residence</span>
+      </div>
+      <h1 class="hello" style="margin:0; font-size:clamp(22px, 2.5vw, 30px);">
+        {{ asset.name }}
+      </h1>
+      <div class="muted">
+        Interactive architectural view with live omnidirectional drifting movement & comprehensive property ledger.
+      </div>
+    </div>
+
+    <div style="display:flex; gap:10px; align-items:center;">
+      <a href="{% url 'property' %}?edit=1" class="btn">
+        ✎ Edit Property Details
+      </a>
+      {% if asset.pinterest_url %}
+      <a href="{{ asset.pinterest_url }}" target="_blank" class="btn ghost" style="color:#e60023; border-color:rgba(230,0,35,0.4);">
+        Pinterest Reference ↗
+      </a>
+      {% endif %}
+      <a href="{% url 'dashboard' %}" class="btn ghost">
+        ← Overview
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Interactive Split Property Showcase -->
+<div class="property-split-showcase">
+  <!-- Left Side: Property Image Moving in All Directions Slowly -->
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div class="omni-moving-stage" id="stageContainer" style="min-height:520px; max-height:640px;">
+      {% if asset.image %}
+        <img id="stageImg" class="omni-moving-img" src="{{ asset.image.url }}" alt="{{ asset.name }}">
+      {% elif asset.image_url %}
+        <img id="stageImg" class="omni-moving-img" src="{% static asset.image_url %}" alt="{{ asset.name }}">
+      {% else %}
+        <img id="stageImg" class="omni-moving-img" src="{% static 'images/villa.jpg' %}" alt="{{ asset.name }}">
+      {% endif %}
+
+      <div class="omni-overlay"></div>
+
+      <div class="omni-badge">
+        ✦ Live Omnidirectional View · Floating Motion
+      </div>
+
+      <div class="omni-stage-tag" style="bottom:16px; left:16px; font-size:11px;">
+        {{ asset.tag|default:"REAL ESTATE" }}
+      </div>
+
+      <div class="omni-controls">
+        <button type="button" class="omni-ctrl-btn" id="motionToggleBtn" onclick="toggleMotion()">
+          <span id="motionIcon">⏸</span> <span id="motionLabel">Pause Motion</span>
+        </button>
+        <button type="button" class="omni-ctrl-btn" onclick="toggleFullscreen()">
+          <span>⛶</span> Full View
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Side: Property Financial Details, Specifications & Upkeep -->
+  <div class="property-details-panel">
+    <div>
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+        <div>
+          <div class="eyebrow">MONARCH REAL ESTATE ASSET</div>
+          <h2 style="font: 600 24px 'Playfair Display'; color: var(--text); margin: 6px 0 4px;">
+            {{ asset.name }}
+          </h2>
+          <div style="font-size: 24px; font-weight: 700; color: var(--gold); font-family: 'Playfair Display'; margin: 4px 0 8px;">
+            ₹ {{ asset.current_valuation|inr }} 
+            <span style="font-size: 14px; font-weight: 500; color: var(--muted); font-family: 'DM Sans';">({{ asset.current_valuation|inr_words }})</span>
+          </div>
+        </div>
+        {% if appreciation > 0 %}
+        <span style="background: rgba(165, 198, 154, 0.15); border: 1px solid var(--green); color: var(--green); font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 20px; white-space:nowrap;">
+          + ₹ {{ appreciation|inr }} (+{{ appreciation_pct }}%) Net Gain
+        </span>
+        {% endif %}
+      </div>
+
+      <p class="muted" style="margin: 8px 0 16px; font-size: 14px; line-height: 1.6;">
+        {{ asset.specification|default:"Ultra-luxury private residence with bespoke architectural layout, private landscaped grounds, and state-of-the-art security." }}
+      </p>
+
+      <!-- Key Metrics Scorecard -->
+      <div class="property-metric-grid">
+        <div class="property-metric-card">
+          <div class="label">CURRENT MARKET VALUATION</div>
+          <div class="val" style="color:var(--gold); font-size:20px; font-weight:700;">₹ {{ asset.current_valuation|inr }}</div>
+          <small class="muted" style="display:block; margin-top:3px; font-size:12px;">{{ asset.current_valuation|inr_words }}</small>
+        </div>
+
+        <div class="property-metric-card">
+          <div class="label">ACQUISITION COST</div>
+          <div class="val" style="font-size:20px; font-weight:700;">₹ {{ asset.purchase_price|inr }}</div>
+          <small class="muted" style="display:block; margin-top:3px; font-size:12px;">{{ asset.purchase_price|inr_words }}</small>
+        </div>
+
+        <div class="property-metric-card">
+          <div class="label">MONTHLY UPKEEP & CARE</div>
+          <div class="val" style="color:var(--red); font-size:20px; font-weight:700;">₹ 18,500 / mo</div>
+          <small class="muted" style="display:block; margin-top:3px; font-size:12px;">Villa Maintenance & Grounds</small>
+        </div>
+
+        <div class="property-metric-card">
+          <div class="label">EST. MORTGAGE FINANCING</div>
+          <div class="val" style="font-size:20px; font-weight:700;">₹ 35,000 / mo</div>
+          <small class="muted" style="display:block; margin-top:3px; font-size:12px;">Active Debt Service (EMI)</small>
+        </div>
+      </div>
+
+      <!-- Portfolio Contribution -->
+      <div style="background: var(--panel2); border-radius: 8px; border: 1px solid var(--line); padding: 14px; margin-top: 14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size: 12px; margin-bottom: 8px;">
+          <span class="muted" style="font-weight:600; letter-spacing:0.5px;">PORTFOLIO WEALTH WEIGHT</span>
+          <span style="color:var(--gold); font-weight:700;">{{ asset_share }}% of Total Asset Wealth</span>
+        </div>
+        <div class="track"><div class="fill" style="width: {{ asset_share }}%;"></div></div>
+        <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px;" class="muted">
+          <span>Real Estate Pillar</span>
+          <span>Asset Class: REAL ESTATE</span>
+        </div>
+      </div>
+
+      <!-- Ownership & Running Cost Ledger -->
+      <div class="assetcost" style="margin-top:16px;">
+        <div style="font-size:11px; color:var(--muted); font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px;">
+          ANNUAL PROPERTY OPERATING PROFILE
+        </div>
+        <div class="line">
+          <span class="muted">Projected Annual Maintenance</span>
+          <span style="color:var(--text); font-weight:600;">₹ 2,22,000 / yr</span>
+        </div>
+        <div class="line">
+          <span class="muted">Annual Property Tax & Insurance (Est.)</span>
+          <span style="color:var(--text); font-weight:600;">₹ 1,20,000 / yr</span>
+        </div>
+        <div class="line">
+          <span class="muted">Net Annual Asset Appreciation Rate</span>
+          <span style="color:var(--green); font-weight:600;">+ {{ appreciation_pct }}% Overall</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex; gap:12px; margin-top:24px; flex-wrap:wrap;">
+      <a href="{% url 'property' %}?edit=1" class="btn" style="flex:1; justify-content:center;">
+        ✎ Modify Property Details
+      </a>
+      {% if asset.pinterest_url %}
+      <a href="{{ asset.pinterest_url }}" target="_blank" class="btn ghost" style="color:#e60023; border-color:rgba(230,0,35,0.4);">
+        Pinterest ↗
+      </a>
+      {% endif %}
+      <a href="{% url 'dashboard' %}" class="btn ghost">
+        ← Back to Overview
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let isMoving = true;
+  function toggleMotion() {
+    const stage = document.getElementById('stageContainer');
+    const icon = document.getElementById('motionIcon');
+    const label = document.getElementById('motionLabel');
+    if (isMoving) {
+      stage.classList.add('paused');
+      icon.textContent = '▶';
+      label.textContent = 'Resume Motion';
+      isMoving = false;
+    } else {
+      stage.classList.remove('paused');
+      icon.textContent = '⏸';
+      label.textContent = 'Pause Motion';
+      isMoving = true;
+    }
+  }
+
+  function toggleFullscreen() {
+    const stage = document.getElementById('stageContainer');
+    if (!document.fullscreenElement) {
+      if (stage.requestFullscreen) {
+        stage.requestFullscreen();
+      } else if (stage.webkitRequestFullscreen) {
+        stage.webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  }
+</script>
+{% endblock %}
