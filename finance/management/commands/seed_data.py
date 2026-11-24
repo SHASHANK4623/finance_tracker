@@ -16,7 +16,10 @@ class Command(BaseCommand):
         email = "shashank@jpmc.com"
         password = "@2468Shashank"
 
-        user, created = User.objects.get_or_create(username=username, defaults={"email": email, "first_name": "Shashank", "last_name": "K"})
+        user, created = User.objects.get_or_create(username=username, defaults={"email": email, "first_name": "Shashank", "last_name": "Y"})
+        user.first_name = "Shashank"
+        user.last_name = "Y"
+        user.email = email
         user.set_password(password)
         user.is_superuser = True
         user.is_staff = True

@@ -70,7 +70,9 @@ def init_user_financial_plan(user, profile=None):
 
 
 def init_user_default_assets(user):
-    """Initializes default luxury property and vehicles for a user if they don't already exist."""
+    """Initializes default luxury property and vehicles ONLY for the demo admin account ('shashank')."""
+    if user.username != 'shashank':
+        return None
     villa = Asset.objects.filter(user=user, asset_type='REAL_ESTATE').first()
     if not villa:
         villa = Asset.objects.create(
@@ -146,7 +148,8 @@ def dashboard_view(request):
     """Main Monarch luxury wealth & expenses analysis dashboard."""
     user = request.user
     profile, _ = UserProfile.objects.get_or_create(user=user)
-    init_user_default_assets(user)
+    if user.username == 'shashank':
+        init_user_default_assets(user)
 
     # 1. High-level KPI aggregates
     total_assets = Asset.objects.filter(user=user).aggregate(Sum('current_valuation'))['current_valuation__sum'] or Decimal('0.00')
@@ -363,7 +366,10 @@ def property_view(request):
     When edit=1 or POST, renders/processes the edit form (edit_property.html).
     """
     user = request.user
-    property_asset = init_user_default_assets(user)
+    if user.username == 'shashank':
+        property_asset = init_user_default_assets(user)
+    else:
+        property_asset = Asset.objects.filter(user=user, asset_type='REAL_ESTATE').first()
     if not property_asset:
         property_asset = Asset.objects.filter(user=user, asset_type='REAL_ESTATE').first()
     is_edit_requested = request.GET.get('edit') == '1' or request.method == 'POST'
@@ -973,7 +979,8 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            init_user_default_assets(user)
+            if user.username == 'shashank':
+                init_user_default_assets(user)
             messages.success(request, f"Welcome back, {user.first_name or user.username}.")
             return redirect('dashboard')
         else:
@@ -1007,7 +1014,6 @@ def register_view(request):
             profile.save()
 
             init_user_financial_plan(user, profile)
-            init_user_default_assets(user)
             login(request, user)
             messages.success(request, f"Account created successfully. Welcome to MONARCH, {user.first_name or user.username}.")
             return redirect('dashboard')
