@@ -2,7 +2,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import JsonResponse
@@ -15,6 +14,7 @@ import datetime
 from .models import UserProfile, Asset, Liability, Transaction, MonthlyFinancialPlan
 from .utils import MONTH_NAMES_FY_2026_2027, generate_random_month_figures
 from .forms import (
+    EmailLoginForm,
     TransactionForm, 
     UserProfileForm, 
     UserRegisterForm, 
@@ -985,14 +985,14 @@ def user_detail_view(request, user_id):
 
 def login_view(request):
     """
-    Unified User & Admin Authentication Login View.
+    Unified User & Admin Authentication Login View (Email + Password).
     Always redirects directly to the Overview menu upon login.
     """
     if request.user.is_authenticated:
         return redirect('dashboard')
 
     if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
+        form = EmailLoginForm(request.POST, request=request)
         if form.is_valid():
             user = form.get_user()
             login(request, user)
@@ -1001,9 +1001,10 @@ def login_view(request):
             messages.success(request, f"Welcome back, {user.first_name or user.username}.")
             return redirect('dashboard')
         else:
-            messages.error(request, "Invalid username or password.")
+            err = form.non_field_errors()[0] if form.non_field_errors() else "Invalid email address or password."
+            messages.error(request, err)
     else:
-        form = AuthenticationForm()
+        form = EmailLoginForm()
 
     return render(request, 'auth/login.html', {'form': form})
 

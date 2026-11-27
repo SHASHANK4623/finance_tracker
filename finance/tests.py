@@ -414,3 +414,25 @@ class MonarchWealthTests(TestCase):
         resp = self.client.get(reverse('dashboard'))
         self.assertEqual(resp.status_code, 200)
         self.assertNotContains(resp, 'nonexistent_avatar.jpg')
+
+    def test_email_login_authentication(self):
+        """Users log in with email and password (not username)."""
+        get_resp = self.client.get(reverse('login'))
+        self.assertEqual(get_resp.status_code, 200)
+        self.assertContains(get_resp, 'name="email"')
+        self.assertNotContains(get_resp, 'name="username"')
+
+        # Wrong password fails
+        bad_resp = self.client.post(reverse('login'), {
+            'email': 'shashank@jpmc.com',
+            'password': 'WrongPassword!'
+        })
+        self.assertEqual(bad_resp.status_code, 200)
+        self.assertFalse(bad_resp.wsgi_request.user.is_authenticated)
+
+        # Case-insensitive valid email succeeds
+        ok_resp = self.client.post(reverse('login'), {
+            'email': 'SHASHANK@JPMC.COM',
+            'password': 'Password123!'
+        })
+        self.assertRedirects(ok_resp, reverse('dashboard'))

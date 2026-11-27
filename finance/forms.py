@@ -1,9 +1,62 @@
 from django import forms
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from .models import UserProfile, Asset, Liability, Transaction, MonthlyFinancialPlan
 from decimal import Decimal
 import os
+
+
+class EmailLoginForm(forms.Form):
+    """Authenticates users using their registered email address and password."""
+
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Enter your email address',
+            'autofocus': 'autofocus',
+        })
+    )
+    password = forms.CharField(
+        required=True,
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-input',
+            'placeholder': '••••••••••••',
+        })
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
+        self.user_cache = None
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        email = (cleaned_data.get('email') or '').strip()
+        password = cleaned_data.get('password')
+
+        if email and password:
+            candidates = User.objects.filter(email__iexact=email)
+            inactive_match = False
+
+            for candidate in candidates:
+                user = authenticate(self.request, username=candidate.username, password=password)
+                if user is not None:
+                    self.user_cache = user
+                    break
+                if candidate.check_password(password) and not candidate.is_active:
+                    inactive_match = True
+
+            if self.user_cache is None:
+                if inactive_match:
+                    raise ValidationError("This account is inactive. Please contact an administrator.")
+                raise ValidationError("Invalid email address or password.")
+
+        return cleaned_data
+
+    def get_user(self):
+        return self.user_cache
 
 
 class TransactionForm(forms.ModelForm):

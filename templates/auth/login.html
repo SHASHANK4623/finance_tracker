@@ -136,8 +136,9 @@
       <form method="post">
         {% csrf_token %}
         <div class="field">
-          <label>Username</label>
-          <input type="text" name="username" required autofocus placeholder="Enter your username" 
+          <label>Email Address</label>
+          <input type="email" name="email" required autofocus placeholder="Enter your email address"
+                 value="{{ request.POST.email|default:'' }}"
                  class="form-input" style="background: rgba(32, 34, 27, 0.9);">
         </div>
 
