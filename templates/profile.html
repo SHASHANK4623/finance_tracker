@@ -17,9 +17,13 @@
 
     <div style="display:flex; align-items:center; gap:24px; margin-bottom:28px; padding-bottom:24px; border-bottom:1px solid var(--line);">
       <div style="position:relative;">
-        {% if profile.avatar %}
-          <img src="{{ profile.avatar.url }}" alt="{{ profile.user.username }}" 
-               style="width:90px; height:90px; border-radius:50%; object-fit:cover; border:2px solid var(--gold);">
+        {% if profile.has_avatar %}
+          <img src="{{ profile.avatar.url }}" alt="{{ profile.user.username }}"
+               style="width:90px; height:90px; border-radius:50%; object-fit:cover; border:2px solid var(--gold);"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';">
+          <div style="display:none; width:90px; height:90px; border-radius:50%; background:#252720; border:2px dashed var(--gold); place-items:center; font-size:32px; color:var(--gold);">
+            ♙
+          </div>
         {% else %}
           <div style="width:90px; height:90px; border-radius:50%; background:#252720; border:2px dashed var(--gold); display:grid; place-items:center; font-size:32px; color:var(--gold);">
             ♙

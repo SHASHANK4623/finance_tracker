@@ -403,3 +403,14 @@ class MonarchWealthTests(TestCase):
         prop_resp = self.client.get(reverse('property'))
         self.assertEqual(prop_resp.status_code, 200)
         self.assertContains(prop_resp, 'applyOriginalAspectStage')
+
+    def test_missing_avatar_file_uses_clean_fallback(self):
+        """If profile.avatar points to a missing file (e.g. ephemeral storage), render fallback instead of broken img."""
+        self.user1.profile.avatar = 'profile_pics/nonexistent_avatar.jpg'
+        self.user1.profile.save()
+        self.assertFalse(self.user1.profile.has_avatar)
+
+        self.client.login(username='shashank', password='Password123!')
+        resp = self.client.get(reverse('dashboard'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotContains(resp, 'nonexistent_avatar.jpg')

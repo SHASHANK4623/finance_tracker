@@ -26,6 +26,16 @@ class UserProfile(models.Model):
         """Calculates default monthly salary based on CTC."""
         return (self.annual_ctc / Decimal('12.00')).quantize(Decimal('0.01'))
 
+    @property
+    def has_avatar(self):
+        """Returns True only if an avatar is set and its file exists on disk/storage."""
+        if not self.avatar or not self.avatar.name:
+            return False
+        try:
+            return self.avatar.storage.exists(self.avatar.name)
+        except Exception:
+            return False
+
     def __str__(self):
         return f"{self.user.username} - {self.occupation}"
 

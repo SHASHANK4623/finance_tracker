@@ -80,8 +80,9 @@
           </a>
           {% endif %}
           <a href="{% url 'profile' %}" class="userpill">
-            {% if user.profile.avatar %}
-              <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}">
+            {% if user.profile.has_avatar %}
+              <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+              <span style="display:none;">♙</span>
             {% else %}
               <span>♙</span>
             {% endif %}
