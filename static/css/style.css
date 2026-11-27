@@ -264,8 +264,12 @@ main {
 
 .assets {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.property-grid {
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
 }
 
 .assetimg {
@@ -671,7 +675,7 @@ td {
 /* Responsive */
 @media (max-width: 1050px) {
   .assets {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   }
   .stats {
     grid-template-columns: repeat(2, 1fr);
@@ -1108,52 +1112,63 @@ body.auth-page {
 }
 
 /* ==========================================================================
-   OMNIDIRECTIONAL SLOW DRIFT ANIMATION & SPLIT PROPERTY SHOWCASE
+   ORIGINAL ASPECT-RATIO PROPERTY SHOWCASE (16:9, 9:16, 1:1, 3:4, 4:3, ORIGINAL)
    ========================================================================== */
 
-/* Continuous omnidirectional floating movement (all directions slowly) */
 @keyframes omniSlowMove {
   0% {
-    transform: scale(1.22) translate(0%, 0%);
+    transform: translate(0px, 0px);
   }
-  20% {
-    transform: scale(1.26) translate(-3%, -2.5%);
-  }
-  40% {
-    transform: scale(1.23) translate(3%, -2%);
-  }
-  60% {
-    transform: scale(1.27) translate(2.5%, 3%);
-  }
-  80% {
-    transform: scale(1.24) translate(-2.5%, 2.5%);
+  50% {
+    transform: translate(0px, -4px);
   }
   100% {
-    transform: scale(1.22) translate(0%, 0%);
+    transform: translate(0px, 0px);
   }
+}
+
+.omni-stage-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0a0b09;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  padding: 10px;
+  min-height: 280px;
 }
 
 .omni-moving-stage {
   position: relative;
   width: 100%;
-  height: 100%;
-  min-height: 440px;
-  max-height: 540px;
+  max-width: 100%;
+  max-height: 75vh;
+  margin: 0 auto;
   overflow: hidden;
   background: #0d0f0c;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .omni-moving-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  position: absolute;
-  inset: 0;
+  object-fit: contain;
+  display: block;
   transform-origin: center center;
-  animation: omniSlowMove 26s ease-in-out infinite alternate;
+  animation: omniSlowMove 12s ease-in-out infinite alternate;
   will-change: transform;
+}
+
+.omni-moving-stage:fullscreen,
+.omni-moving-stage:-webkit-full-screen {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  border-radius: 0;
 }
 
 .omni-moving-stage.paused .omni-moving-img {
@@ -1272,8 +1287,7 @@ body.auth-page {
     grid-template-columns: 1fr;
   }
   .omni-moving-stage {
-    min-height: 300px;
-    max-height: 360px;
+    max-height: 60vh;
   }
 }
 

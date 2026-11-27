@@ -214,7 +214,8 @@ def dashboard_view(request):
     # 4. Assets (Collection & Residence)
     assets = Asset.objects.filter(user=user)
     collection_assets = assets.exclude(asset_type='REAL_ESTATE')
-    villa_asset = assets.filter(asset_type='REAL_ESTATE').first()
+    real_estate_assets = assets.filter(asset_type='REAL_ESTATE')
+    villa_asset = real_estate_assets.first()
 
     # 5. Cost of ownership breakdown (Calculated for the selected month)
     if selected_plan and selected_plan.total_projected_expense() > Decimal('0.00'):
@@ -338,6 +339,7 @@ def dashboard_view(request):
         'default_financial_month': default_financial_month,
         'assets': assets,
         'collection_assets': collection_assets,
+        'real_estate_assets': real_estate_assets,
         'villa': villa_asset,
         'villa_appreciation': villa_appreciation,
         'villa_appreciation_pct': villa_appreciation_pct,

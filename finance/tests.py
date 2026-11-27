@@ -380,3 +380,26 @@ class MonarchWealthTests(TestCase):
         custom_plan.refresh_from_db()
         self.assertEqual(custom_plan.salary_income, Decimal('777777.00'))
         self.assertTrue(custom_plan.is_customized)
+
+    def test_dashboard_property_grid_and_original_aspect_stage(self):
+        """Test all real estate properties render in a grid and showcase supports original aspect ratios."""
+        Asset.objects.create(
+            user=self.user1,
+            name='Goa Beachfront Penthouse',
+            asset_type='REAL_ESTATE',
+            tag='REAL ESTATE 02',
+            purchase_price=Decimal('12000000.00'),
+            current_valuation=Decimal('14500000.00'),
+            specification='3,400 sq ft · Oceanfront deck'
+        )
+        self.client.login(username='shashank', password='Password123!')
+        dash_resp = self.client.get(reverse('dashboard'))
+        self.assertEqual(dash_resp.status_code, 200)
+        self.assertContains(dash_resp, 'property-grid')
+        self.assertContains(dash_resp, 'Private Villa Estate')
+        self.assertContains(dash_resp, 'Goa Beachfront Penthouse')
+        self.assertContains(dash_resp, 'applyOriginalAspectStage')
+
+        prop_resp = self.client.get(reverse('property'))
+        self.assertEqual(prop_resp.status_code, 200)
+        self.assertContains(prop_resp, 'applyOriginalAspectStage')

@@ -155,3 +155,54 @@ window.addEventListener('click', (e) => {
     closeModal();
   }
 });
+
+/**
+ * Matches an image's natural dimensions to its exact format (16:9, 9:16, 1:1, 3:4, 4:3, or natural)
+ * and sizes the showcase stage to display it uncropped in that format.
+ */
+function applyOriginalAspectStage(stageEl, imgEl, badgeEl, nextSrc) {
+  if (!stageEl || !imgEl) return;
+
+  const PRESET_RATIOS = [
+    { label: '16:9', css: '16 / 9', val: 16 / 9 },
+    { label: '9:16', css: '9 / 16', val: 9 / 16 },
+    { label: '1:1', css: '1 / 1', val: 1 },
+    { label: '3:4', css: '3 / 4', val: 3 / 4 },
+    { label: '4:3', css: '4 / 3', val: 4 / 3 },
+  ];
+
+  const syncStage = () => {
+    const w = imgEl.naturalWidth;
+    const h = imgEl.naturalHeight;
+    if (!w || !h) return;
+
+    const naturalRatio = w / h;
+    let matched = null;
+    for (const preset of PRESET_RATIOS) {
+      if (Math.abs(naturalRatio - preset.val) / preset.val <= 0.04) {
+        matched = preset;
+        break;
+      }
+    }
+
+    const cssRatio = matched ? matched.css : `${w} / ${h}`;
+    const effectiveRatio = matched ? matched.val : naturalRatio;
+    const formatLabel = matched ? matched.label : `${w}×${h}`;
+
+    stageEl.style.aspectRatio = cssRatio;
+    stageEl.style.width = `min(100%, calc(min(70vh, 580px) * ${effectiveRatio.toFixed(6)}))`;
+    stageEl.style.height = 'auto';
+
+    if (badgeEl) {
+      badgeEl.textContent = `✦ Original Format · ${formatLabel}`;
+    }
+  };
+
+  imgEl.onload = syncStage;
+  if (nextSrc) {
+    imgEl.src = nextSrc;
+  }
+  if (imgEl.complete && imgEl.naturalWidth > 0) {
+    syncStage();
+  }
+}

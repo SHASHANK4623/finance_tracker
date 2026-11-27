@@ -291,7 +291,7 @@
   <div class="secthead">
     <div>
       <h2 class="secttitle">The Residence</h2>
-      <div class="sectsub">Your luxury villa and real estate portfolio (Click to view live omnidirectional showcase)</div>
+      <div class="sectsub">Your luxury properties & real estate grid (Click any property to view in its original format)</div>
     </div>
     <div style="display:flex; gap:10px; align-items:center;">
       <a href="{% url 'property' %}" class="btn ghost" style="padding:6px 14px; font-size:12px;">
@@ -303,68 +303,60 @@
     </div>
   </div>
 
-  {% if villa %}
-  <!-- Compact, Balanced Villa Showcase Card -->
-  <div class="card villa" onclick="openPropertyShowcase()" title="Click to view interactive omnidirectional showcase">
-    <div class="villaphoto">
-      {% if villa.image %}
-      <img src="{{ villa.image.url }}" alt="{{ villa.name }}">
-      {% elif villa.image_url %}
-      <img src="{% static villa.image_url %}" alt="{{ villa.name }}">
-      {% else %}
-      <img src="{% static 'images/villa.jpg' %}" alt="Private Villa">
-      {% endif %}
+  {% if real_estate_assets %}
+  <div class="assets property-grid">
+    {% for prop in real_estate_assets %}
+    <div class="card" style="cursor:pointer;"
+         onclick="openShowcaseFromAsset(this)"
+         data-name="{{ prop.name }}"
+         data-image="{% if prop.image %}{{ prop.image.url }}{% elif prop.image_url %}{% static prop.image_url %}{% else %}{% static 'images/villa.jpg' %}{% endif %}"
+         data-val="₹ {{ prop.current_valuation|inr }}"
+         data-valwords="{{ prop.current_valuation|inr_words }}"
+         data-rawval="{{ prop.current_valuation|stringformat:'f' }}"
+         data-acq="₹ {{ prop.purchase_price|inr }}"
+         data-acqwords="{{ prop.purchase_price|inr_words }}"
+         data-rawacq="{{ prop.purchase_price|stringformat:'f' }}"
+         data-spec="{{ prop.specification|default:'Private luxury estate' }}"
+         data-tag="{{ prop.tag|default:'REAL ESTATE' }}"
+         data-type="{{ prop.asset_type }}"
+         data-pin="{{ prop.pinterest_url|default:'' }}"
+         data-edit="{% if forloop.first %}{% url 'property' %}?edit=1{% else %}{% url 'edit_asset' prop.id %}{% endif %}"
+         data-fullurl="{% url 'property' %}"
+         title="Click to view property in original aspect ratio">
+      <div class="assetimg">
+        {% if prop.image %}
+        <img src="{{ prop.image.url }}" alt="{{ prop.name }}">
+        {% elif prop.image_url %}
+        <img src="{% static prop.image_url %}" alt="{{ prop.name }}">
+        {% else %}
+        <img src="{% static 'images/villa.jpg' %}" alt="{{ prop.name }}">
+        {% endif %}
+        <span class="tag">{{ prop.tag|default:"REAL ESTATE" }}</span>
 
-      <div class="omni-badge" style="font-size:10px; padding:3px 8px; top:10px; left:10px;">
-        ✦ Interactive Showcase
-      </div>
-
-      {% if villa.pinterest_url %}
-      <a href="{{ villa.pinterest_url }}" target="_blank" onclick="event.stopPropagation()"
-        style="position:absolute; right:10px; top:10px; z-index:4; background:#e60023; color:#fff; text-decoration:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:700; box-shadow:0 2px 8px rgba(0,0,0,0.6);">
-        Pinterest ↗
-      </a>
-      {% endif %}
-    </div>
-    <div class="villainfo">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span class="tag" style="position:static; margin:0; font-size:10px;">REAL ESTATE</span>
-          {% if villa_appreciation > 0 %}
-          <span style="font-size:11px; color:var(--green); font-weight:700;">+ ₹ {{ villa_appreciation|inr }} (+{{ villa_appreciation_pct }}%)</span>
-          {% endif %}
-        </div>
-        <a href="{% url 'property' %}?edit=1" onclick="event.stopPropagation()" class="btn ghost" style="padding:3px 8px; font-size:10px;">✎ Modify</a>
-      </div>
-      <div class="assetname" style="font-size:20px; margin-bottom:2px;">{{ villa.name }}</div>
-      <div class="muted" style="font-size:13px;">{{ villa.specification|default:"Private luxury estate" }}</div>
-      <div class="villaamount" style="margin:6px 0 8px;">
-        <span style="font-size:22px; font-weight:700; color:var(--gold);">₹ {{ villa.current_valuation|inr }}</span>
-        <span class="muted" style="font-size:13px; font-weight:500; margin-left:6px;">({{ villa.current_valuation|inr_words }})</span>
-      </div>
-      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; padding-top:8px; border-top:1px solid var(--line); font-size:13px;">
-        <div>
-          <div class="muted" style="font-size:11px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase;">ACQUISITION</div>
-          <div style="color:var(--text); font-weight:600; margin-top:2px;">₹ {{ villa.purchase_price|inr }}</div>
-        </div>
-        <div>
-          <div class="muted" style="font-size:11px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase;">MORTGAGE EMI</div>
-          <div style="color:var(--text); font-weight:600; margin-top:2px;">₹ 35,000 / mo</div>
-        </div>
-        <div>
-          <div class="muted" style="font-size:11px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase;">CARE & UPKEEP</div>
-          <div style="color:var(--red); font-weight:600; margin-top:2px;">₹ 18,500 / mo</div>
-        </div>
-      </div>
-      <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
-        <span style="color:var(--gold); font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
-          <span>✦</span> Click to view omnidirectional slow movement showcase ↗
+        <span style="position:absolute; bottom:8px; right:8px; z-index:2; background:rgba(18,20,15,0.85); color:var(--gold); border:1px solid rgba(213,183,123,0.3); padding:3px 7px; border-radius:4px; font-size:10px; font-weight:600;">
+          ✦ Original View
         </span>
-        <a href="{% url 'property' %}" onclick="event.stopPropagation()" class="btn ghost" style="padding:3px 8px; font-size:10px;">
-          Showcase View ↗
+
+        {% if prop.pinterest_url %}
+        <a href="{{ prop.pinterest_url }}" target="_blank" onclick="event.stopPropagation()"
+          style="position:absolute; right:12px; top:12px; z-index:2; background:#e60023; color:#fff; text-decoration:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:700; letter-spacing:0.5px; box-shadow:0 2px 8px rgba(0,0,0,0.5);">
+          Pinterest ↗
         </a>
+        {% endif %}
+      </div>
+      <div class="assetbody">
+        <div style="display:flex; justify-content:space-between; align-items:start; gap:8px;">
+          <div class="assetname">{{ prop.name }}</div>
+          <a href="{% if forloop.first %}{% url 'property' %}?edit=1{% else %}{% url 'edit_asset' prop.id %}{% endif %}" onclick="event.stopPropagation()" class="btn ghost" style="padding:3px 7px; font-size:10px; white-space:nowrap;"
+            title="Modify Property">✎ Edit</a>
+        </div>
+        <div class="assetmeta">
+          <span>{{ prop.specification|default:"Private luxury estate"|truncatechars:46 }}</span>
+        </div>
+        <div class="assetvalue">₹ {{ prop.current_valuation|inr }} <small class="muted">({{ prop.current_valuation|inr_words }})</small></div>
       </div>
     </div>
+    {% endfor %}
   </div>
   {% else %}
   <div class="card pad" style="text-align:center; padding:40px 20px;">
@@ -564,23 +556,25 @@
   <div class="modalbox property-modal-box" onclick="event.stopPropagation()">
     <button class="modal-close-btn" type="button" onclick="closePropertyModal()">&times;</button>
     <div class="property-split-showcase">
-      <!-- Left: Omnidirectional slow moving image stage -->
-      <div class="omni-moving-stage" id="modalStageContainer">
-        <img id="modalShowcaseImg" class="omni-moving-img" 
-             src="{% if villa.image %}{{ villa.image.url }}{% elif villa.image_url %}{% static villa.image_url %}{% else %}{% static 'images/villa.jpg' %}{% endif %}" 
-             alt="Showcase View">
-        <div class="omni-overlay"></div>
-        <div class="omni-badge">✦ Live Omnidirectional View · Floating Motion</div>
-        <div id="modalShowcaseTag" class="omni-stage-tag">
-          {{ villa.tag|default:"REAL ESTATE" }}
-        </div>
-        <div class="omni-controls">
-          <button type="button" class="omni-ctrl-btn" id="modalMotionToggleBtn" onclick="toggleModalMotion()">
-            <span id="modalMotionIcon">⏸</span> <span id="modalMotionLabel">Pause Motion</span>
-          </button>
-          <button type="button" class="omni-ctrl-btn" onclick="toggleModalFullscreen()">
-            <span>⛶</span> Full View
-          </button>
+      <!-- Left: Original aspect-ratio image stage (16:9, 9:16, 1:1, 3:4, 4:3, or natural) -->
+      <div class="omni-stage-wrap">
+        <div class="omni-moving-stage" id="modalStageContainer">
+          <img id="modalShowcaseImg" class="omni-moving-img" 
+               src="{% if villa.image %}{{ villa.image.url }}{% elif villa.image_url %}{% static villa.image_url %}{% else %}{% static 'images/villa.jpg' %}{% endif %}" 
+               alt="Showcase View">
+          <div class="omni-overlay"></div>
+          <div class="omni-badge" id="modalFormatBadge">✦ Original Format</div>
+          <div id="modalShowcaseTag" class="omni-stage-tag">
+            {{ villa.tag|default:"REAL ESTATE" }}
+          </div>
+          <div class="omni-controls">
+            <button type="button" class="omni-ctrl-btn" id="modalMotionToggleBtn" onclick="toggleModalMotion()">
+              <span id="modalMotionIcon">⏸</span> <span id="modalMotionLabel">Pause Motion</span>
+            </button>
+            <button type="button" class="omni-ctrl-btn" onclick="toggleModalFullscreen()">
+              <span>⛶</span> Full View
+            </button>
+          </div>
         </div>
       </div>
 
@@ -665,7 +659,15 @@
   function openPropertyShowcase() {
     const modal = document.getElementById('propertyShowcaseModal');
     if (modal) {
-      document.getElementById('modalShowcaseImg').src = "{% if villa.image %}{{ villa.image.url }}{% elif villa.image_url %}{% static villa.image_url %}{% else %}{% static 'images/villa.jpg' %}{% endif %}";
+      const stage = document.getElementById('modalStageContainer');
+      const imgEl = document.getElementById('modalShowcaseImg');
+      const badgeEl = document.getElementById('modalFormatBadge');
+      applyOriginalAspectStage(
+        stage,
+        imgEl,
+        badgeEl,
+        "{% if villa.image %}{{ villa.image.url }}{% elif villa.image_url %}{% static villa.image_url %}{% else %}{% static 'images/villa.jpg' %}{% endif %}"
+      );
       document.getElementById('modalShowcaseTag').textContent = "REAL ESTATE";
       document.getElementById('modalShowcaseSub').textContent = "MONARCH REAL ESTATE ASSET";
       document.getElementById('modalShowcaseTitle').textContent = "{{ villa.name|default:'Private Luxury Villa Estate'|escapejs }}";
@@ -735,10 +737,16 @@
     const assetType = (card.dataset.type || '').toLowerCase();
     const pin = card.dataset.pin || '';
     const editUrl = card.dataset.edit || '#';
+    const fullUrl = card.dataset.fullurl || '';
+    const isRealEstate = assetType === 'real_estate';
 
-    document.getElementById('modalShowcaseImg').src = img;
+    const stage = document.getElementById('modalStageContainer');
+    const imgEl = document.getElementById('modalShowcaseImg');
+    const badgeEl = document.getElementById('modalFormatBadge');
+    applyOriginalAspectStage(stage, imgEl, badgeEl, img);
+
     document.getElementById('modalShowcaseTag').textContent = tag;
-    document.getElementById('modalShowcaseSub').textContent = 'MONARCH LUXURY COLLECTION';
+    document.getElementById('modalShowcaseSub').textContent = isRealEstate ? 'MONARCH REAL ESTATE ASSET' : 'MONARCH LUXURY COLLECTION';
     document.getElementById('modalShowcaseTitle').textContent = name;
     document.getElementById('modalShowcaseSpec').textContent = spec;
     document.getElementById('modalShowcaseValTop').textContent = val;
@@ -750,20 +758,28 @@
     document.getElementById('modalShowcaseAcq').textContent = acq;
     document.getElementById('modalShowcaseAcqWords').textContent = 'Acquisition Price';
 
-    // Tailored running costs & ownership metrics based on vehicle type
-    document.getElementById('modalCard3Label').textContent = 'EST. MONTHLY RUNNING';
-    if (assetType === 'bike' || tag.toLowerCase().includes('motorcycle') || tag.toLowerCase().includes('bike')) {
-      document.getElementById('modalShowcaseMaint').textContent = '₹ 7,500 / mo';
-      document.getElementById('modalShowcaseMaintSub').textContent = 'Fuel & Routine Care';
+    if (isRealEstate) {
+      document.getElementById('modalCard3Label').textContent = 'MONTHLY UPKEEP & CARE';
+      document.getElementById('modalShowcaseMaint').textContent = '₹ 18,500 / mo';
+      document.getElementById('modalShowcaseMaint').style.color = 'var(--red)';
+      document.getElementById('modalShowcaseMaintSub').textContent = 'Residence Maintenance';
+      document.getElementById('modalCard4Label').textContent = 'EST. MORTGAGE FINANCING';
+      document.getElementById('modalShowcaseEmi').textContent = '₹ 35,000 / mo';
+      document.getElementById('modalShowcaseEmiSub').textContent = 'Active Loan Commitment';
     } else {
-      document.getElementById('modalShowcaseMaint').textContent = '₹ 15,000 / mo';
-      document.getElementById('modalShowcaseMaintSub').textContent = 'Fuel, Insurance & Servicing';
+      document.getElementById('modalCard3Label').textContent = 'EST. MONTHLY RUNNING';
+      if (assetType === 'motorcycle' || assetType === 'bike' || tag.toLowerCase().includes('motorcycle') || tag.toLowerCase().includes('bike')) {
+        document.getElementById('modalShowcaseMaint').textContent = '₹ 7,500 / mo';
+        document.getElementById('modalShowcaseMaintSub').textContent = 'Fuel & Routine Care';
+      } else {
+        document.getElementById('modalShowcaseMaint').textContent = '₹ 15,000 / mo';
+        document.getElementById('modalShowcaseMaintSub').textContent = 'Fuel, Insurance & Servicing';
+      }
+      document.getElementById('modalShowcaseMaint').style.color = 'var(--text)';
+      document.getElementById('modalCard4Label').textContent = 'PORTFOLIO STATUS';
+      document.getElementById('modalShowcaseEmi').textContent = 'Fully Owned';
+      document.getElementById('modalShowcaseEmiSub').textContent = 'Private Asset Collection';
     }
-    document.getElementById('modalShowcaseMaint').style.color = 'var(--text)';
-
-    document.getElementById('modalCard4Label').textContent = 'PORTFOLIO STATUS';
-    document.getElementById('modalShowcaseEmi').textContent = 'Fully Owned';
-    document.getElementById('modalShowcaseEmiSub').textContent = 'Private Vehicle Collection';
 
     // Real-time calculated share of total wealth portfolio
     if (TOTAL_ASSETS_NUM > 0 && rawVal > 0) {
@@ -771,14 +787,13 @@
       document.getElementById('modalShowcaseShare').textContent = sharePct + '% of Total Assets';
       document.getElementById('modalShowcaseTrack').style.width = sharePct + '%';
     } else {
-      document.getElementById('modalShowcaseShare').textContent = 'Collection Asset';
+      document.getElementById('modalShowcaseShare').textContent = isRealEstate ? 'Primary Real Estate' : 'Collection Asset';
       document.getElementById('modalShowcaseTrack').style.width = '25%';
     }
 
     // Appreciation badge if value preserved or gained
     if (rawVal > rawAcq && rawAcq > 0) {
-      const diff = rawVal - rawAcq;
-      document.getElementById('modalShowcaseApprecBadge').textContent = 'Value Preserved / Appreciating';
+      document.getElementById('modalShowcaseApprecBadge').textContent = isRealEstate ? 'Appreciating Property' : 'Value Preserved / Appreciating';
       document.getElementById('modalShowcaseApprecBadge').style.display = 'inline-block';
     } else {
       document.getElementById('modalShowcaseApprecBadge').style.display = 'none';
@@ -786,8 +801,14 @@
 
     // Action buttons
     document.getElementById('modalShowcaseEditBtn').href = editUrl;
-    document.getElementById('modalShowcaseEditBtn').textContent = '✎ Modify Vehicle';
-    document.getElementById('modalShowcaseFullPageBtn').style.display = 'none'; // Only for Residence/Villa
+    document.getElementById('modalShowcaseEditBtn').textContent = isRealEstate ? '✎ Modify Residence' : '✎ Modify Asset';
+    const fullBtn = document.getElementById('modalShowcaseFullPageBtn');
+    if (fullUrl) {
+      fullBtn.href = fullUrl;
+      fullBtn.style.display = 'inline-flex';
+    } else {
+      fullBtn.style.display = 'none';
+    }
 
     const pinBtn = document.getElementById('modalShowcasePinBtn');
     if (pin) {
