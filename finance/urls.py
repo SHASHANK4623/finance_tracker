@@ -16,6 +16,7 @@ urlpatterns = [
     
     path('liabilities/<int:pk>/edit/', views.edit_liability_view, name='edit_liability'),
     path('financial-plan/', views.financial_plan_view, name='financial_plan'),
+    path('financial-plan/randomize/', views.randomize_financial_plan_view, name='randomize_financial_plan'),
     path('financial-plan/<int:pk>/edit/', views.edit_financial_plan_view, name='edit_financial_plan'),
     
     path('profile/', views.profile_view, name='profile'),

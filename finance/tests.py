@@ -1,10 +1,12 @@
 from django.test import TestCase, Client
+from django.core.management import call_command
 from django.contrib.auth.models import User
 from django.urls import reverse
 from decimal import Decimal
 import json
 
 from finance.models import UserProfile, Asset, Liability, Transaction, MonthlyFinancialPlan
+from finance.utils import generate_random_month_figures
 
 
 class MonarchWealthTests(TestCase):
@@ -244,10 +246,40 @@ class MonarchWealthTests(TestCase):
         self.assertEqual(rachel.profile.annual_ctc, Decimal('1800000.00'))
         self.assertEqual(rachel.profile.monthly_salary(), Decimal('150000.00'))
 
-        # Check annual inflow is exactly 18 Lakhs (not 50 Lakhs!)
+        # Check annual salary matches entered 18 Lakhs, with ups & downs across the year and positive surplus
         dash_resp = self.client.get(reverse('dashboard'))
-        self.assertEqual(dash_resp.context['annual_income'], Decimal('1800000.00'))
-        self.assertEqual(dash_resp.context['monthly_income'], Decimal('150000.00'))
+        self.assertEqual(dash_resp.context['annual_salary'], Decimal('1800000.00'))
+        self.assertGreaterEqual(dash_resp.context['monthly_income'], Decimal('150000.00'))
+        self.assertGreater(dash_resp.context['annual_income'], dash_resp.context['annual_expense'])
+
+        # Check all 12 months on financial_plan have ups & downs for the new user and are editable monthly
+        fp_resp = self.client.get(reverse('financial_plan'))
+        self.assertEqual(fp_resp.status_code, 200)
+        self.assertContains(fp_resp, 'Other Income')
+        rachel_plans = list(MonthlyFinancialPlan.objects.filter(user=rachel).order_by('month_number'))
+        self.assertEqual(len(rachel_plans), 12)
+        self.assertGreater(len({p.total_projected_income() for p in rachel_plans}), 1)
+        self.assertGreater(len({p.total_projected_expense() for p in rachel_plans}), 1)
+
+        # Verify monthly-wise edit works and marks month customized
+        m1 = rachel_plans[0]
+        edit_resp = self.client.post(reverse('edit_financial_plan', kwargs={'pk': m1.pk}), {
+            'salary_income': '150000.00',
+            'stocks_esops': '25000.00',
+            'freelance_income': '30000.00',
+            'gifts_bonus': '10000.00',
+            'liabilities_emi': '12000.00',
+            'food_expenses': '15000.00',
+            'household_expenses': '10000.00',
+            'vehicle_expenses': '8000.00',
+            'travel_expenses': '5000.00',
+            'health_expenses': '4000.00',
+            'villa_maintenance': '6000.00',
+        })
+        self.assertRedirects(edit_resp, reverse('financial_plan'))
+        m1.refresh_from_db()
+        self.assertTrue(m1.is_customized)
+        self.assertEqual(m1.other_income(), Decimal('40000.00'))
 
         # Test salary below minimum 10k is rejected by form validation
         self.client.logout()
@@ -283,3 +315,68 @@ class MonarchWealthTests(TestCase):
         self.assertEqual(resp_aug.status_code, 200)
         self.assertEqual(resp_aug.context['selected_month_num'], 5)
         self.assertIn('August', resp_aug.context['selected_month_name'])
+
+    def test_randomized_income_and_expenses_always_positive_surplus(self):
+        """Randomly generated income & expenses vary across months and always keep income > expenses."""
+        # Normal and high-EMI stress cases
+        for base_salary, fixed_emi in [
+            (Decimal('333333.33'), Decimal('53000.00')),
+            (Decimal('10000.00'), Decimal('0.00')),
+            (Decimal('50000.00'), Decimal('80000.00')),
+        ]:
+            for month in range(1, 13):
+                fig = generate_random_month_figures(
+                    base_salary=base_salary,
+                    month_number=month,
+                    fixed_emi=fixed_emi,
+                    randomize_income=True,
+                    include_luxury_assets=True,
+                )
+                total_inc = fig['salary_income'] + fig['stocks_esops'] + fig['freelance_income'] + fig['gifts_bonus']
+                total_exp = (
+                    fig['liabilities_emi']
+                    + fig['food_expenses']
+                    + fig['household_expenses']
+                    + fig['vehicle_expenses']
+                    + fig['travel_expenses']
+                    + fig['health_expenses']
+                    + fig['villa_maintenance']
+                )
+                self.assertGreater(total_inc, total_exp)
+
+    def test_randomize_financial_plan_endpoint_and_seed_data(self):
+        """Test POST /financial-plan/randomize/ and seed_data preserving customized months."""
+        self.client.login(username='shashank', password='Password123!')
+        resp = self.client.post(reverse('randomize_financial_plan'))
+        self.assertRedirects(resp, reverse('financial_plan'))
+
+        plans = list(MonthlyFinancialPlan.objects.filter(user=self.user1).order_by('month_number'))
+        self.assertEqual(len(plans), 12)
+        # Salary and home/EMI expenses stay constant across all 12 months
+        self.assertEqual(len({p.salary_income for p in plans}), 1)
+        self.assertEqual(len({p.household_expenses for p in plans}), 1)
+        self.assertEqual(len({p.villa_maintenance for p in plans}), 1)
+        self.assertEqual(len({p.liabilities_emi for p in plans}), 1)
+
+        # Variable income & expenses (travel, food, vehicle, health) have ups and downs
+        incomes = {p.total_projected_income() for p in plans}
+        expenses = {p.total_projected_expense() for p in plans}
+        self.assertGreater(len(incomes), 1)
+        self.assertGreater(len(expenses), 1)
+        self.assertGreater(len({p.travel_expenses for p in plans}), 1)
+        self.assertGreater(len({p.food_expenses for p in plans}), 1)
+        self.assertGreater(len({p.vehicle_expenses for p in plans}), 1)
+        self.assertGreater(len({p.health_expenses for p in plans}), 1)
+        for p in plans:
+            self.assertGreater(p.total_projected_income(), p.total_projected_expense())
+
+        # Verify seed_data preserves customized months
+        custom_plan = plans[0]
+        custom_plan.salary_income = Decimal('777777.00')
+        custom_plan.is_customized = True
+        custom_plan.save()
+
+        call_command('seed_data')
+        custom_plan.refresh_from_db()
+        self.assertEqual(custom_plan.salary_income, Decimal('777777.00'))
+        self.assertTrue(custom_plan.is_customized)

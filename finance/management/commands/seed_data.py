@@ -1,6 +1,8 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from finance.models import UserProfile, Asset, Liability, Transaction, MonthlyFinancialPlan
+from finance.utils import MONTH_NAMES_FY_2026_2027, generate_random_month_figures
+from finance.views import init_user_financial_plan
 from decimal import Decimal
 import datetime
 
@@ -126,36 +128,43 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f"Seeded {len(liabilities_data)} liabilities."))
 
-        # 4. Seed 1 Financial Year (12 Months)
-        month_names = [
-            "April 2026", "May 2026", "June 2026", "July 2026", 
-            "August 2026", "September 2026", "October 2026", "November 2026", 
-            "December 2026", "January 2027", "February 2027", "March 2027"
-        ]
+        # 4. Seed 1 Financial Year (12 Months) with randomized Income & Expenses (Income > Expenses)
+        total_emi = sum(ldata["monthly_emi"] for ldata in liabilities_data)
+        base_salary = profile.monthly_salary()
 
-        for i, m_name in enumerate(month_names, start=1):
+        for i, m_name in enumerate(MONTH_NAMES_FY_2026_2027, start=1):
+            existing_plan = MonthlyFinancialPlan.objects.filter(
+                user=user,
+                financial_year="2026-2027",
+                month_number=i,
+            ).first()
+            # Preserve any month manually customized by the user in production
+            if existing_plan and existing_plan.is_customized:
+                continue
+
+            figures = generate_random_month_figures(
+                base_salary=base_salary,
+                month_number=i,
+                fixed_emi=total_emi,
+                randomize_income=True,
+                include_luxury_assets=True,
+            )
             MonthlyFinancialPlan.objects.update_or_create(
                 user=user,
                 financial_year="2026-2027",
                 month_number=i,
                 defaults={
                     "month_name": m_name,
-                    "salary_income": Decimal('333333.33'),
-                    "stocks_esops": Decimal('50000.00'),
-                    "freelance_income": Decimal('40000.00'),
-                    "gifts_bonus": Decimal('25000.00') if i in [7, 12] else Decimal('0.00'),
-                    "liabilities_emi": Decimal('53000.00'),
-                    "food_expenses": Decimal('25000.00'),
-                    "household_expenses": Decimal('20000.00'),
-                    "vehicle_expenses": Decimal('45000.00'),
-                    "travel_expenses": Decimal('15000.00'),
-                    "health_expenses": Decimal('10000.00'),
-                    "villa_maintenance": Decimal('18500.00'),
-                    "is_customized": False
-                }
+                    **figures,
+                    "is_customized": False,
+                },
             )
 
         self.stdout.write(self.style.SUCCESS("Seeded 1 Financial Year (12 months) financial plans."))
+
+        # Upgrade any existing non-customized flat plans for other users so all users see ups & downs
+        for other_user in User.objects.exclude(pk=user.pk):
+            init_user_financial_plan(other_user)
 
         # 5. Seed Transactions (From Prototype Activity)
         transactions_data = [

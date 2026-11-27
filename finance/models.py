@@ -188,6 +188,17 @@ class MonthlyFinancialPlan(models.Model):
         unique_together = ('user', 'financial_year', 'month_number')
         ordering = ['month_number']
 
+    def other_income(self):
+        return self.freelance_income + self.gifts_bonus
+
+    def living_and_health_expenses(self):
+        return (
+            self.food_expenses +
+            self.household_expenses +
+            self.travel_expenses +
+            self.health_expenses
+        )
+
     def total_projected_income(self):
         return self.salary_income + self.stocks_esops + self.freelance_income + self.gifts_bonus
 

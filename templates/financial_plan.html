@@ -14,7 +14,7 @@
   <div class="card stat">
     <div class="statlabel">ANNUAL GROSS INFLOW</div>
     <div class="statvalue positive">₹ {{ year_total_income|inr }}</div>
-    <div class="positive">Salary + Stocks + Freelancing</div>
+    <div class="positive">Salary + Stocks + Other Income</div>
   </div>
 
   <div class="card stat">
@@ -62,6 +62,12 @@
         Calculated for Financial Year 2026–2027. Default assets & liabilities pre-populated across all months. Click ✎ to modify any month.
       </div>
     </div>
+    <form method="post" action="{% url 'randomize_financial_plan' %}" style="margin:0;">
+      {% csrf_token %}
+      <button type="submit" class="btn ghost" style="font-size:12px;">
+        🎲 Randomize Income & Expenses
+      </button>
+    </form>
   </div>
 
   <div class="tablewrap">
@@ -71,7 +77,7 @@
           <th>Month</th>
           <th>Salary Income</th>
           <th>ESOPs / Stocks</th>
-          <th>Freelancing</th>
+          <th>Other Income</th>
           <th>Liabilities (EMI)</th>
           <th>Vehicle Expenses</th>
           <th>Residence Care</th>
@@ -86,11 +92,11 @@
           <td><b>{{ plan.month_name }}</b></td>
           <td class="positive">₹ {{ plan.salary_income|inr }}</td>
           <td class="positive">₹ {{ plan.stocks_esops|inr }}</td>
-          <td class="positive">₹ {{ plan.freelance_income|inr }}</td>
+          <td class="positive">₹ {{ plan.other_income|inr }}</td>
           <td class="negative">₹ {{ plan.liabilities_emi|inr }}</td>
           <td class="negative">₹ {{ plan.vehicle_expenses|inr }}</td>
           <td class="negative">₹ {{ plan.villa_maintenance|inr }}</td>
-          <td class="negative">₹ {{ plan.food_expenses|add:plan.household_expenses|add:plan.travel_expenses|add:plan.health_expenses|inr }}</td>
+          <td class="negative">₹ {{ plan.living_and_health_expenses|inr }}</td>
           <td class="{% if plan.projected_surplus >= 0 %}positive{% else %}negative{% endif %}" style="font-weight:600;">
             ₹ {{ plan.projected_surplus|inr }}
           </td>
@@ -107,7 +113,7 @@
           <td>FULL YEAR TOTAL</td>
           <td class="positive">₹ {{ year_salary|inr }}</td>
           <td class="positive">₹ {{ year_stocks|inr }}</td>
-          <td class="positive">₹ {{ year_freelance|inr }}</td>
+          <td class="positive">₹ {{ year_other_income|inr }}</td>
           <td colspan="3" class="negative" style="text-align:center;">Total Outflows: ₹ {{ year_total_expense|inr }}</td>
           <td colspan="3" class="positive" style="text-align:right; font-size:14px; color:var(--gold);">
             Net Surplus: ₹ {{ year_surplus|inr }}

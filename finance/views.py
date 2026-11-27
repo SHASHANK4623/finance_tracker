@@ -13,6 +13,7 @@ import json
 import datetime
 
 from .models import UserProfile, Asset, Liability, Transaction, MonthlyFinancialPlan
+from .utils import MONTH_NAMES_FY_2026_2027, generate_random_month_figures
 from .forms import (
     TransactionForm, 
     UserProfileForm, 
@@ -27,46 +28,58 @@ from .forms import (
 )
 
 
-def init_user_financial_plan(user, profile=None):
-    """Initializes 12 financial months for the user based strictly on their entered salary."""
-    existing = MonthlyFinancialPlan.objects.filter(user=user).order_by('month_number')
-    if existing.exists():
-        return existing
-
+def randomize_user_financial_plan(user, profile=None):
+    """Creates or refreshes all 12 uncustomized months with randomized income & expense ups/downs."""
     if profile is None:
         profile, _ = UserProfile.objects.get_or_create(user=user)
 
     raw_salary = profile.monthly_salary() if profile else Decimal('0.00')
     monthly_salary = max(raw_salary, Decimal('10000.00')) if raw_salary > Decimal('0.00') else Decimal('10000.00')
+    total_emi = Liability.objects.filter(user=user, is_active=True).aggregate(
+        Sum('monthly_emi')
+    )['monthly_emi__sum'] or Decimal('0.00')
+    has_luxury_assets = Asset.objects.filter(
+        user=user, asset_type__in=['CAR', 'MOTORCYCLE', 'REAL_ESTATE']
+    ).exists()
 
-    month_names = [
-        "April 2026", "May 2026", "June 2026", "July 2026", 
-        "August 2026", "September 2026", "October 2026", "November 2026", 
-        "December 2026", "January 2027", "February 2027", "March 2027"
-    ]
-
-    # No ranged percentages; baseline minimum 10k (10,000 INR) for monthly living categories
-    base_min = Decimal('10000.00')
-
-    for i, m_name in enumerate(month_names, start=1):
-        MonthlyFinancialPlan.objects.create(
+    for i, m_name in enumerate(MONTH_NAMES_FY_2026_2027, start=1):
+        figures = generate_random_month_figures(
+            base_salary=monthly_salary,
+            month_number=i,
+            fixed_emi=total_emi,
+            randomize_income=True,
+            include_luxury_assets=has_luxury_assets,
+        )
+        MonthlyFinancialPlan.objects.update_or_create(
             user=user,
             financial_year="2026-2027",
             month_number=i,
-            month_name=m_name,
-            salary_income=monthly_salary,
-            stocks_esops=Decimal('0.00'),
-            freelance_income=Decimal('0.00'),
-            gifts_bonus=Decimal('0.00'),
-            liabilities_emi=Decimal('0.00'),
-            food_expenses=base_min,
-            household_expenses=base_min,
-            vehicle_expenses=Decimal('0.00'),
-            travel_expenses=base_min,
-            health_expenses=base_min,
-            villa_maintenance=Decimal('0.00'),
+            defaults={
+                "month_name": m_name,
+                **figures,
+                "is_customized": False,
+            },
         )
     return MonthlyFinancialPlan.objects.filter(user=user).order_by('month_number')
+
+
+def init_user_financial_plan(user, profile=None):
+    """
+    Ensures 12 financial months exist for the user with realistic ups & downs.
+    Automatically upgrades legacy flat uncustomized 12-month plans once.
+    """
+    existing = MonthlyFinancialPlan.objects.filter(user=user).order_by('month_number')
+    if existing.exists():
+        plans_list = list(existing)
+        has_customized = any(p.is_customized for p in plans_list)
+        if not has_customized and len(plans_list) == 12:
+            incomes_flat = len({p.total_projected_income() for p in plans_list}) <= 1
+            expenses_flat = len({p.total_projected_expense() for p in plans_list}) <= 1
+            if incomes_flat or expenses_flat:
+                return randomize_user_financial_plan(user, profile)
+        return existing
+
+    return randomize_user_financial_plan(user, profile)
 
 
 def init_user_default_assets(user):
@@ -156,10 +169,8 @@ def dashboard_view(request):
     total_liabilities = Liability.objects.filter(user=user, is_active=True).aggregate(Sum('remaining_balance'))['remaining_balance__sum'] or Decimal('0.00')
     net_worth = total_assets - total_liabilities
 
-    # 2. Ensure 12-month Financial Plan exists
-    plans = MonthlyFinancialPlan.objects.filter(user=user).order_by('month_number')
-    if not plans.exists():
-        plans = init_user_financial_plan(user, profile)
+    # 2. Ensure 12-month Financial Plan exists (and upgrade legacy flat plans)
+    plans = init_user_financial_plan(user, profile)
 
     # 3. Monthly Calculation: Income and Expenses calculated on a MONTHLY basis (not daily!)
     today = datetime.date.today()
@@ -248,10 +259,7 @@ def dashboard_view(request):
     # Liabilities list
     liabilities = Liability.objects.filter(user=user, is_active=True)
 
-    # 6. Ensure 12-month Financial Plan exists
-    plans = MonthlyFinancialPlan.objects.filter(user=user).order_by('month_number')
-    if not plans.exists():
-        plans = init_user_financial_plan(user, profile)
+    # 6. Financial Plan series for charts (reuse initialized plans)
 
     # 7. Graphical Presentation Data (Monthly & Yearly)
     chart_months = [p.month_name.replace(" 2026", "").replace(" 2027", "") for p in plans]
@@ -269,7 +277,7 @@ def dashboard_view(request):
     # Inflows Breakdown
     annual_salary = sum(p.salary_income for p in plans)
     annual_stocks = sum(p.stocks_esops for p in plans)
-    annual_freelance = sum(p.freelance_income for p in plans)
+    annual_freelance = sum(p.other_income() for p in plans)
 
     # Annual Expense Breakdown Categories
     annual_liabilities = sum(float(p.liabilities_emi) for p in plans)
@@ -692,15 +700,12 @@ def financial_plan_view(request):
     """1 Financial Year (12 months) overview, projections table and interactive charts."""
     user = request.user
     profile, _ = UserProfile.objects.get_or_create(user=user)
-    plans = MonthlyFinancialPlan.objects.filter(user=user).order_by('month_number')
-
-    if not plans.exists():
-        plans = init_user_financial_plan(user, profile)
+    plans = init_user_financial_plan(user, profile)
 
     # Calculate year totals
     year_salary = sum(p.salary_income for p in plans)
     year_stocks = sum(p.stocks_esops for p in plans)
-    year_freelance = sum(p.freelance_income for p in plans)
+    year_other_income = sum(p.other_income() for p in plans)
     year_total_income = sum(p.total_projected_income() for p in plans)
     year_total_expense = sum(p.total_projected_expense() for p in plans)
     year_surplus = year_total_income - year_total_expense
@@ -722,7 +727,7 @@ def financial_plan_view(request):
         'plans': plans,
         'year_salary': year_salary,
         'year_stocks': year_stocks,
-        'year_freelance': year_freelance,
+        'year_other_income': year_other_income,
         'year_total_income': year_total_income,
         'year_total_expense': year_total_expense,
         'year_surplus': year_surplus,
@@ -731,6 +736,16 @@ def financial_plan_view(request):
         'active_tab': 'financial_plan',
     }
     return render(request, 'financial_plan.html', context)
+
+
+@login_required
+def randomize_financial_plan_view(request):
+    """Generates fresh randomized income & expense projections for all 12 months (Income > Expenses)."""
+    if request.method == 'POST':
+        randomize_user_financial_plan(request.user)
+        messages.success(request, "Generated randomized 12-month income & expense projections (Income > Expenses).")
+
+    return redirect('financial_plan')
 
 
 # ---------------------- AUTHENTICATION & ADMIN USER MANAGEMENT ---------------------- #
