@@ -19,8 +19,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-3jofa81h1@q=%cz+il4ds4^3_!gnzry)*on0vpm!v85(_yn+(9')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# Automatically defaults to False on Railway / production environments
-is_railway_or_prod = bool(os.environ.get('RAILWAY_ENVIRONMENT_NAME') or os.environ.get('RAILWAY_STATIC_URL'))
+# Automatically defaults to False on Railway / Render / production environments
+is_railway_or_prod = bool(
+    os.environ.get('RAILWAY_ENVIRONMENT_NAME')
+    or os.environ.get('RAILWAY_STATIC_URL')
+    or os.environ.get('RENDER')
+)
 if 'DEBUG' in os.environ:
     DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
 elif is_railway_or_prod:
@@ -30,16 +34,20 @@ else:
 
 ALLOWED_HOSTS = ['*']
 
-# Railway & Production CSRF Security
+# Railway, Render & Production CSRF Security
 CSRF_TRUSTED_ORIGINS = [
     'https://*.railway.app',
     'https://*.up.railway.app',
+    'https://*.onrender.com',
     'http://localhost',
     'http://127.0.0.1',
 ]
 railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
 if railway_domain:
     CSRF_TRUSTED_ORIGINS.append(f'https://{railway_domain}')
+render_hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if render_hostname:
+    CSRF_TRUSTED_ORIGINS.append(f'https://{render_hostname}')
 
 # Application definition
 INSTALLED_APPS = [
